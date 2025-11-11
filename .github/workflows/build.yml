@@ -35,6 +35,11 @@ jobs:
       packages: write
       id-token: write
 
+    strategy:
+      fail-fast: false
+      matrix:
+        image_name: [zirconium, zirconium-nvidia]
+
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
@@ -77,20 +82,33 @@ jobs:
           sep-tags: " "
           sep-annotations: " "
 
+      - name: Pull containers
+        run: |
+          sudo podman pull quay.io/fedora/fedora-bootc:43
+          sudo podman pull ghcr.io/ublue-os/akmods-nvidia-open:main-43-x86_64
+
+      - name: Define env.CONTAINER_TARGET
+        run: |
+          echo "CONTAINER_TARGET=${{ matrix.image_name }}" >> $GITHUB_ENV
+
       - name: Build image
         id: build
         run: |
-          sudo podman build -t "${{env.IMAGE_NAME}}:${{env.DEFAULT_TAG}}" -f ./Containerfile .
+          sudo -E buildah build --target ${{ env.CONTAINER_TARGET }} --tag raw-img .
+
+      - name: Cleanup images
+        run: |
+          sudo podman image rm quay.io/fedora/fedora-bootc:43
+          sudo podman image rm ghcr.io/ublue-os/akmods-nvidia-open:main-43-x86_64
 
       - name: Run Rechunker
         id: rechunk
         uses: hhd-dev/rechunk@5fbe1d3a639615d2548d83bc888360de6267b1a2 # v1.2.4
         with:
           rechunk: "ghcr.io/hhd-dev/rechunk:v1.2.4"
-          ref: "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
-          prev-ref: "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+          ref: "raw-img"
+          prev-ref: "${{ env.IMAGE_REGISTRY }}/${{ env.CONTAINER_TARGET }}:${{ env.DEFAULT_TAG }}"
           skip_compression: true
-          version: ${{ env.CENTOS_VERSION }}
           labels: ${{ steps.metadata.outputs.labels }} # Rechunk strips out all the labels during build, this needs to be reapplied here with newline separator
 
       - name: Load in podman and tag
@@ -98,7 +116,7 @@ jobs:
           IMAGE=$(podman pull ${{ steps.rechunk.outputs.ref }})
           sudo rm -rf ${{ steps.rechunk.outputs.output }}
           for tag in ${{ steps.metadata.outputs.tags }}; do
-            podman tag $IMAGE ${{ env.IMAGE_NAME }}:$tag
+            podman tag $IMAGE ${{ env.CONTAINER_TARGET }}:$tag
           done
 
       - name: Login to GitHub Container Registry
@@ -118,7 +136,7 @@ jobs:
           REGISTRY_PASSWORD: ${{ github.token }}
         with:
           registry: ${{ env.IMAGE_REGISTRY }}
-          image: ${{ env.IMAGE_NAME }}
+          image: ${{ env.CONTAINER_TARGET }}
           tags: ${{ steps.metadata.outputs.tags }}
           username: ${{ env.REGISTRY_USER }}
           password: ${{ env.REGISTRY_PASSWORD }}
@@ -130,7 +148,7 @@ jobs:
       - name: Sign container image
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         run: |
-          cosign sign -y --key env://COSIGN_PRIVATE_KEY "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}@$DIGEST"
+          cosign sign -y --key env://COSIGN_PRIVATE_KEY "${{ env.IMAGE_REGISTRY }}/${{ env.CONTAINER_TARGET }}@$DIGEST"
         env:
           DIGEST: ${{ steps.push.outputs.digest }}
           COSIGN_EXPERIMENTAL: false
