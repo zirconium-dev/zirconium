@@ -1,0 +1,3 @@
+[Flatpak Preinstall io.github.deaen.awesomecalculator]
+Branch=stable
+IsRuntime=false
