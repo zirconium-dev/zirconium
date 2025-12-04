@@ -1,4 +1,7 @@
 ARG BUILD_FLAVOR="${BUILD_FLAVOR:-}"
+ARG BASE_NAME="${BASE_NAME:-quay.io/fedora/fedora-bootc}"
+ARG BASE_VERSION="${BASE_VERSION:-43}"
+ARG BASE_IMAGE="${BASE_IMAGE:-${BASE_NAME}:${BASE_VERSION}}"
 
 FROM scratch AS ctx
 
@@ -6,8 +9,7 @@ COPY build_files /build
 COPY system_files /files
 COPY cosign.pub /files/etc/pki/containers/zirconium.pub
 
-FROM quay.io/fedora/fedora-bootc:43
-ARG BUILD_FLAVOR="${BUILD_FLAVOR:-}"
+FROM ${BASE_IMAGE} AS build
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/var \
