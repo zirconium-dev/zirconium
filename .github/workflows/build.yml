@@ -7,8 +7,8 @@ on:
   schedule:
     - cron: "05 10 * * *" # 10:05am UTC everyday
   push:
-    branches:
-      - main
+    #branches:
+    #  - main
     paths-ignore:
       - "**/README.md"
   workflow_dispatch:
@@ -20,26 +20,29 @@ env:
   IMAGE_NAME: "${{ github.event.repository.name }}"
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
   DEFAULT_TAG: "latest"
+  RUN_TAG: "${{ github.run_id }}.${{ github.run_attempt }}.${{ github.run_number }}"
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}-${{ inputs.brand_name}}-${{ inputs.stream_name }}
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
   cancel-in-progress: true
 
 jobs:
-  build_push:
-    name: Build and push image
-    runs-on: ubuntu-24.04
+  build-single-arch:
+    name: "Build ${{ matrix.platform }}${{ matrix.flavor != '' && format(' + {0}', matrix.flavor) || '' }} image"
+    runs-on: ${{ matrix.platform == 'x86_64' && 'ubuntu-24.04' || matrix.platform == 'aarch64' && 'ubuntu-24.04-arm' }}
 
+    env:
+      IMAGE_NAME: ${{ matrix.flavor == '' && github.event.repository.name || format('{0}-{1}', github.event.repository.name, matrix.flavor) }} # append flavor to image name if not empty
+      ARCH_TAG: latest-${{ matrix.platform }}
     permissions:
       contents: read
       packages: write
       id-token: write
-
     strategy:
       fail-fast: false
       matrix:
+        platform: ["aarch64", "x86_64"]
         flavor: ["", "nvidia"]
-
     steps:
       - name: Mount BTRFS for podman storage
         id: container-storage-action
@@ -50,7 +53,7 @@ jobs:
           mount-opts: compress-force=zstd:2
 
       - name: Checkout
-        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v5
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: Get current date
         id: date
@@ -61,17 +64,18 @@ jobs:
           # https://linux.die.net/man/1/date
           echo "date=$(date -u +%Y\-%m\-%d\T%H\:%M\:%S\Z)" >> $GITHUB_OUTPUT
 
-      - name: Image Metadata
+      - name: Single-arch Image Metadata
         uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
         id: metadata
         with:
-          tags: |
+          tags: &tags |
+            type=raw,value=${{ env.RUN_TAG }}
             type=raw,value=${{ env.DEFAULT_TAG }}
             type=raw,value=${{ env.DEFAULT_TAG }}.{{date 'YYYYMMDD'}}
             type=raw,value={{date 'YYYYMMDD'}}
             type=sha,enable=${{ github.event_name == 'pull_request' }}
             type=ref,event=pr
-          labels: |
+          labels: &labels |
             io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/refs/heads/main/README.md
             org.opencontainers.image.created=${{ steps.date.outputs.date }}
             org.opencontainers.image.description=${{ env.IMAGE_DESC }}
@@ -89,52 +93,78 @@ jobs:
             containers.bootc=1
           sep-tags: " "
           sep-annotations: " "
+          flavor: |
+            suffix=-${{ matrix.platform }}
 
-      - name: Change image name depending on build flavor
+      - name: Download Maple Mono font
         env:
-          BUILD_FLAVOR: ${{ matrix.flavor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ "${BUILD_FLAVOR}" != "" ] ; then
-            echo "IMAGE_NAME=${IMAGE_NAME}-${{ matrix.flavor }}" >> $GITHUB_ENV
-          fi
+          mkdir -p "system_files/usr/share/fonts/Maple Mono"
 
-      - name: Build image
+          MAPLE_TMPDIR="$(mktemp -d)"
+          trap 'rm -rf "${MAPLE_TMPDIR}"' EXIT
+
+          LATEST_RELEASE_FONT="$(curl -fSsL \
+            --header "Authorization: Bearer ${GITHUB_TOKEN}" \
+            --connect-timeout 5 \
+              --max-time 10 \
+              --retry 5 \
+              --retry-delay 0 \
+              --retry-max-time 40 \
+            "https://api.github.com/repos/subframe7536/maple-font/releases/latest" \
+            | jq '.assets[] | select(.name == "MapleMono-Variable.zip") | .browser_download_url' -rc)"
+          curl -fSsL \
+            --connect-timeout 5 \
+              --max-time 10 \
+              --retry 5 \
+              --retry-delay 0 \
+              --retry-max-time 40 \
+            -o "${MAPLE_TMPDIR}/maple.zip" "${LATEST_RELEASE_FONT}"
+          unzip "${MAPLE_TMPDIR}/maple.zip" -d "system_files/usr/share/fonts/Maple Mono"
+
+      - name: Build Image
         id: build
-        env:
-          BUILD_FLAVOR: ${{ matrix.flavor }}
         run: |
           set -x
-          sudo podman build "--build-arg=BUILD_FLAVOR=${BUILD_FLAVOR}" -t "${IMAGE_NAME}:${DEFAULT_TAG}" -f ./Containerfile .
+          sudo podman build "--build-arg=BUILD_FLAVOR=${{ matrix.flavor }}" \
+            "--build-arg=BASE_VERSION=43-${{ matrix.platform  }}" \
+            --tag "${{ env.IMAGE_NAME }}:${{ env.ARCH_TAG }}.build" \
+            --file ./Containerfile \
+            --platform "linux/${{ matrix.platform }}" \
+            .
 
       - name: Run Rechunker
         id: rechunk
         uses: hhd-dev/rechunk@5fbe1d3a639615d2548d83bc888360de6267b1a2 # v1.2.4
         with:
           rechunk: "ghcr.io/hhd-dev/rechunk:v1.2.4"
-          ref: "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
-          prev-ref: "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+          ref: "localhost/${{ env.IMAGE_NAME }}:${{ env.ARCH_TAG }}.build"
+          prev-ref: "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.ARCH_TAG }}"
           skip_compression: true
           labels: ${{ steps.metadata.outputs.labels }} # Rechunk strips out all the labels during build, this needs to be reapplied here with newline separator
 
       - name: Load in podman and tag
         run: |
+          set -euxo pipefail
           IMAGE="$(podman pull ${{ steps.rechunk.outputs.ref }})"
-          sudo rm -rf ${{ steps.rechunk.outputs.output }}
-          for tag in ${{ steps.metadata.outputs.tags }}; do
-            podman tag $IMAGE ${{ env.IMAGE_NAME }}:$tag
+          for tag in ${{ steps.metadata.outputs.tags }} ${{ env.RUN_TAG }}-${{ matrix.platform }}; do
+              podman tag "${IMAGE}" ${{ env.IMAGE_NAME }}:$tag
           done
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        #if: github.event_name != 'pull_request' && github.ref_name == github.event.repository.default_branch
+        if: github.event_name != 'pull_request'
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push To GHCR
+      - name: Push single-arch image to GHCR
         uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        #if: github.event_name != 'pull_request' && github.ref_name == github.event.repository.default_branch
+        if: github.event_name != 'pull_request'
         id: push
         env:
           REGISTRY_USER: ${{ github.actor }}
@@ -142,16 +172,105 @@ jobs:
         with:
           registry: ${{ env.IMAGE_REGISTRY }}
           image: ${{ env.IMAGE_NAME }}
-          tags: ${{ steps.metadata.outputs.tags }}
+          tags: ${{ env.RUN_TAG }}-${{ matrix.platform }}
           username: ${{ env.REGISTRY_USER }}
           password: ${{ env.REGISTRY_PASSWORD }}
-
       - name: Install Cosign
-        uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
+        #if: github.event_name != 'pull_request' && github.ref_name == github.event.repository.default_branch
+        if: github.event_name != 'pull_request'
+
+      - name: Sign single-arch image
+        #if: github.event_name != 'pull_request' && github.ref_name == github.event.repository.default_branch
+        if: github.event_name != 'pull_request'
+        run: |
+          cosign sign -y --key env://COSIGN_PRIVATE_KEY "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}@$DIGEST"
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+          COSIGN_EXPERIMENTAL: false
+          COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
+
+      - name: Export ${{ matrix.platform }} image as OCI archive
+        run: podman save -o /tmp/${{ matrix.platform }}-oci.tar ${{ env.IMAGE_NAME }}:${{ env.RUN_TAG }}-${{ matrix.platform }} --format oci-archive
+
+      - name: Upload single-arch image to workflow artifacts
+        uses: actions/upload-artifact@v5
+        with:
+          name: ${{ env.IMAGE_NAME }}-${{ matrix.platform }}
+          path: /tmp/${{ matrix.platform }}-oci.tar
+          if-no-files-found: error
+          #retention-days: 1
+
+  multi-arch:
+    strategy:
+      matrix:
+        flavor: ["", "nvidia"]
+    env:
+      IMAGE_NAME: ${{ matrix.flavor == '' && github.event.repository.name || format('{0}-{1}', github.event.repository.name, matrix.flavor) }} # append flavor to image name if not empty
+    name: "Combine and push${{ matrix.flavor != '' && format(' + {0}', matrix.flavor) || '' }} multi-arch image"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    needs: [build-single-arch]
+    steps:
+      #- name: Download images from artifacts
+      #  uses: actions/download-artifact@v6
+      #  with:
+      #    path: .
+      #    merge-multiple: true
+      #- run: find
+
+      - name: Create podman manifest
+        run: |
+          podman manifest create ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Add architectures to manifest
+        run: |
+          set -euxo pipefail
+          for arch in aarch64 x86_64; do
+            SHA=$(skopeo inspect docker://"${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.RUN_TAG }}-$arch" | jq --raw-output ".Digest")
+            podman manifest add ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }} ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}@$SHA
+          done
+      - name: Inspect manifest
+        run: podman manifest inspect ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Multi-arch Image Metadata
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        id: metadata
+        with:
+          labels: *labels
+          tags: *tags
+          sep-tags: " "
+          sep-annotations: " "
+      - name: Load in podman and tag
+        run: |
+          for tag in ${{ steps.metadata.outputs.tags }}; do
+            podman tag ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }} ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:$tag
+          done
+
+      - name: Push multi-arch image to GHCR
+        uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2
+        #if: github.event_name != 'pull_request' && github.ref_name == github.event.repository.default_branch
+        if: github.event_name != 'pull_request'
+        id: push
+        env:
+          REGISTRY_USER: ${{ github.actor }}
+          REGISTRY_PASSWORD: ${{ github.token }}
+        with:
+          registry: ${{ env.IMAGE_REGISTRY }}
+          image: ${{ env.IMAGE_NAME }}
+          tags: latest
+          username: ${{ env.REGISTRY_USER }}
+          password: ${{ env.REGISTRY_PASSWORD }}
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
+        #if: github.event_name != 'pull_request' && github.ref_name == github.event.repository.default_branch
+        if: github.event_name != 'pull_request'
 
       - name: Sign container image
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        #if: github.event_name != 'pull_request' && github.ref_name == github.event.repository.default_branch
+        if: github.event_name != 'pull_request'
         run: |
           cosign sign -y --key env://COSIGN_PRIVATE_KEY "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}@$DIGEST"
         env:

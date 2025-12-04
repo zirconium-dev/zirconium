@@ -134,15 +134,6 @@ cp -f /usr/share/zirconium/zdots/dot_config/niri/config.kdl /etc/niri/config.kdl
 file /etc/niri/config.kdl | grep -F -e "empty" -v
 stat /etc/niri/config.kdl
 
-mkdir -p "/usr/share/fonts/Maple Mono"
-
-MAPLE_TMPDIR="$(mktemp -d)"
-trap 'rm -rf "${MAPLE_TMPDIR}"' EXIT
-
-LATEST_RELEASE_FONT="$(curl "https://api.github.com/repos/subframe7536/maple-font/releases/latest" | jq '.assets[] | select(.name == "MapleMono-Variable.zip") | .browser_download_url' -rc)"
-curl -fSsLo "${MAPLE_TMPDIR}/maple.zip" "${LATEST_RELEASE_FONT}"
-unzip "${MAPLE_TMPDIR}/maple.zip" -d "/usr/share/fonts/Maple Mono"
-
 fc-cache --force --really-force --system-only --verbose # recreate font-cache to pick up the added fonts
 
 echo 'source /usr/share/zirconium/shell/pure.bash' | tee -a "/etc/bashrc"
