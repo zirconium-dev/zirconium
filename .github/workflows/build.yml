@@ -183,11 +183,7 @@ jobs:
 
       # Necessary until bootc supports Cosign v3
       - name: Install old cosign
-        run: |
-          GITHUB_TOKEN=$(< /run/secrets/GITHUB_TOKEN)
-          echo "Using GITHUB_TOKEN from /run/secrets/GITHUB_TOKEN for authentication." >&2
-          AUTH_HEADER="Authorization: Bearer $GITHUB_TOKEN"
-          curl --retry 3 -H "${AUTH_HEADER}" -fsSLo "/usr/bin/cosign" "https://github.com/sigstore/cosign/releases/download/v2.6.1/cosign-linux-${{matrix.platform}}"
+        run: 'curl --retry 3 -H "Authorization: Bearer ${{ github.token }}" -fsSLo "/usr/bin/cosign" "https://github.com/sigstore/cosign/releases/download/v2.6.1/cosign-linux-${{matrix.platform}}"'
 
       # FIXME: REMOVE THIS PLEASE <https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstrategyfail-fast>
       - name: Exit on failure
