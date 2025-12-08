@@ -1,0 +1,11 @@
+
+[Unit]
+Description = Ensure Niri local configuration files exist
+
+[Service]
+Type = oneshot
+ConditionPathExists=!/etc/niri/local.kdl
+ExecStart = touch /etc/niri/local.kdl
+
+[Install]
+WantedBy = multi-user.target

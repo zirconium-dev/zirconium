@@ -1,0 +1,19 @@
+hotkey-overlay {
+    skip-at-startup
+}
+
+environment {
+    DMS_RUN_GREETER "1"
+}
+
+gestures {
+    hot-corners {
+        off
+    }
+}
+
+layout {
+    background-color "#000000"
+}
+
+include "/etc/greetd/niri-greetd-local.kdl"

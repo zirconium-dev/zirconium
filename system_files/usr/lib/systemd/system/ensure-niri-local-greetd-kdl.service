@@ -1,0 +1,11 @@
+
+[Unit]
+Description = Ensure Niri local configuration files exist
+
+[Service]
+Type = oneshot
+ConditionPathExists=!/etc/greetd/niri-greetd-local.kdl
+ExecStart = touch /etc/greetd/niri-greetd-local.kdl
+
+[Install]
+WantedBy = multi-user.target

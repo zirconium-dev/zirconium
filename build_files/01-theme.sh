@@ -115,6 +115,8 @@ systemctl enable --global gnome-keyring-daemon.service
 systemctl enable --global swayidle.service
 systemctl enable --global udiskie.service
 systemctl enable --global xwayland-satellite.service
+systemctl enable --global ensure-niri-local-greetd-kdl.service
+systemctl enable --global ensure-niri-local-greetd-kdl.service
 systemctl preset --global chezmoi-init
 systemctl preset --global chezmoi-update
 systemctl preset --global cliphist
@@ -122,9 +124,11 @@ systemctl preset --global swayidle
 systemctl preset --global udiskie
 systemctl preset --global foot
 systemctl preset --global xwayland-satellite
+systemctl preset --global ensure-niri-local-greetd-kdl.service
+systemctl preset --global ensure-niri-local-greetd-kdl.service
 
 git clone "https://github.com/noctalia-dev/noctalia-shell.git" /usr/share/zirconium/noctalia-shell
-cp /usr/share/zirconium/skel/Pictures/Wallpapers/mountains.png /usr/share/zirconium/noctalia-shell/Assets/Wallpaper/noctalia.png
+cp "/usr/share/zirconium//skel//Pictures/Wallpapers/Trans Flag Sunset at Riis Beach.png" /usr/share/zirconium/noctalia-shell/Assets/Wallpaper/noctalia.png
 cp -rf /usr/share/zirconium/skel/* /etc/skel
 git clone "https://github.com/zirconium-dev/zdots.git" /usr/share/zirconium/zdots
 install -d /etc/niri/

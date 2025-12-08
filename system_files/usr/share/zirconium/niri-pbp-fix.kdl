@@ -1,0 +1,3 @@
+debug {
+    render-drm-device "/dev/dri/card1"
+}
