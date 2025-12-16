@@ -41,8 +41,8 @@ systemctl enable rechunker-group-fix.service
 
 # REQUIRED for dms-greeter to work
 tee /usr/lib/sysusers.d/greeter.conf <<'EOF'
-g greeter -
-u greeter - "Greetd greeter"
+g greeter 6767
+u greeter 6767 "Greetd greeter"
 EOF
 
 KERNEL_VERSION="$(find "/usr/lib/modules" -maxdepth 1 -type d ! -path "/usr/lib/modules" -exec basename '{}' ';' | sort | tail -n 1)"
