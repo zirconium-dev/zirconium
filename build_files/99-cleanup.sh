@@ -38,9 +38,7 @@ rm -rf /usr/share/doc
 rm -rf /usr/bin/chsh # footgun
 
 # disable uupd from updating distroboxes
-if [[ "$(rpm -E %fedora)" -eq "42" ]]; then
 sed -i 's|uupd|& --disable-module-distrobox|' /usr/lib/systemd/system/uupd.service
-fi
 
 systemctl enable rechunker-group-fix.service
 
