@@ -7,7 +7,7 @@ COPY system_files /files
 COPY --from=ghcr.io/ublue-os/brew:latest /system_files /files
 COPY cosign.pub /files/etc/pki/containers/zirconium.pub
 
-FROM quay.io/fedora/fedora-bootc:43
+FROM quay.io/fedora/fedora-bootc:44@sha256:0326aedf9ee1ff4958bc00604d4471d874540eb9ddda7513bfe1da01736d19ae
 ARG BUILD_FLAVOR="${BUILD_FLAVOR:-}"
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
