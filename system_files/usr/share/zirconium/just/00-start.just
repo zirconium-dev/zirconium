@@ -1,17 +1,25 @@
+zdots_path := "/usr/share/zirconium/zdots"
+
 default:
     @zjust --choose
 
 zdots-update:
     #!/usr/bin/env bash
-    yes s | chezmoi apply --no-tty --keep-going -S "/usr/share/zirconium/zdots" --verbose --config "$HOME/.config/zirconium/chezmoi/chezmoi.toml"
+    yes s | chezmoi apply --no-tty --keep-going -S "{{ zdots_path }}" --verbose --config "$HOME/.config/zirconium/chezmoi/chezmoi.toml"
 
 zdots-reset FILE:
     #!/usr/bin/env bash
-    chezmoi apply --force -S "/usr/share/zirconium/zdots" --verbose --config "$HOME/.config/zirconium/chezmoi/chezmoi.toml" {{FILE}}
+    chezmoi apply --force -S "{{ zdots_path }}" --verbose --config "$HOME/.config/zirconium/chezmoi/chezmoi.toml" {{FILE}}
 
 zdots-override-all:
     #!/usr/bin/env bash
-    chezmoi apply --force -S "/usr/share/zirconium/zdots" --verbose --config "$HOME/.config/zirconium/chezmoi/chezmoi.toml" 
+    if ! command -v gum &>/dev/null ; then
+        echo "This script requires gum to run, install it: brew install gum"
+        exit 1
+    fi
+    if gum confirm "Are you sure you want to reset all your configuration?" ; then
+        chezmoi apply --force -S "{{ zdots_path }}" --verbose --config "$HOME/.config/zirconium/chezmoi/chezmoi.toml" 
+    fi
 
 toggle-user-motd:
     #!/usr/bin/env bash
@@ -46,7 +54,6 @@ switch-to-dms:
     systemctl mask --now --user noctalia.service
     systemctl unmask --user dms.service
     systemctl enable --now --user dms.service
-    systemctl disable --now --user swayidle.service
 
 switch-to-noctalia:
     #!/usr/bin/env bash
@@ -55,14 +62,27 @@ switch-to-noctalia:
     systemctl mask --now --user dms.service
     systemctl unmask --user noctalia.service
     systemctl enable --now --user noctalia.service
-    systemctl enable --now --user swayidle.service
 
 reset-niri:
     #!/usr/bin/env bash
-    zjust zdots-reset "${HOME}/.config/niri"
+    if ! command -v gum &>/dev/null ; then
+        echo "This script requires gum to run, install it: brew install gum"
+        exit 1
+    fi
+    if gum confirm "Are you sure you want to reset your niri configuration?" ; then
+        zjust zdots-reset "${HOME}/.config/niri"
+    fi
 
 update-greeter:
     dms greeter sync
 
 update:
     sudo uupd
+
+tpm2:
+    #!/usr/bin/env bash
+    if ! command -v gum &>/dev/null ; then
+        echo "This script requires gum to run, install it: brew install gum"
+        exit 1
+    fi
+    /usr/bin/luks-tpm2-autounlock
