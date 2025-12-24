@@ -91,7 +91,7 @@ jobs:
           echo "remote_image_digest=$(< /tmp/digestfile)" | tee "${GITHUB_OUTPUT}"
 
       - name: Install Cosign
-        uses: sigstore/cosign-installer@v4.0.0
+        uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
         if: github.event_name != 'pull_request'
 
       - name: Sign Image
@@ -141,7 +141,7 @@ jobs:
         run: apk add bash coreutils curl docker findutils fuse-overlayfs git grep jq podman sed
 
       - name: Install Cosign
-        uses: sigstore/cosign-installer@v4.0.0
+        uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
         if: github.event_name != 'pull_request'
 
       - name: Exit on failure
