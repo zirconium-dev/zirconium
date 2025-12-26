@@ -119,6 +119,9 @@ systemctl preset --global udiskie
 systemctl enable brew-setup.service
 systemctl enable flatpak-preinstall.service
 
+# So the user@greeter.service wont run and give an error
+systemctl mask user@"$( id -u greeter )".service
+
 git clone "https://github.com/noctalia-dev/noctalia-shell.git" /usr/share/zirconium/noctalia-shell
 cp /usr/share/zirconium/skel/Pictures/Wallpapers/mountains.png /usr/share/zirconium/noctalia-shell/Assets/Wallpaper/noctalia.png
 cp -rf /usr/share/zirconium/skel/* /etc/skel
