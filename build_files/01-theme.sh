@@ -9,7 +9,7 @@ dnf -y copr disable zirconium/packages
 dnf -y --enablerepo copr:copr.fedorainfracloud.org:zirconium:packages install \
     matugen \
     iio-niri \
-    valent \
+    valent-git \
     xwayland-satellite # specifically just for version 0.8 (track RHBZ#2419373 for upstream version bump)
 
 dnf -y copr enable yalter/niri-git
