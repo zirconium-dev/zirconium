@@ -70,7 +70,6 @@ dnf -y install \
     orca \
     pipewire \
     playerctl \
-    powerstat \
     steam-devices \
     udiskie \
     webp-pixbuf-loader \
@@ -80,6 +79,11 @@ dnf -y install \
     xdg-desktop-portal-gtk \
     xdg-user-dirs \
     xwayland-satellite
+
+if [ "$(arch)" != "aarch64" ] ; then
+  dnf install -y \
+    powerstat
+fi
 
 # we already have a service for handling fcitx5
 rm -f /usr/share/applications/fcitx5-wayland-launcher.desktop
