@@ -1,10 +1,7 @@
 [customizations.installer.kickstart]
 contents = """
-%post --erroronfail
-# bootc switch --mutate-in-place --transport registry ghcr.io/zirconium-dev/zirconium:latest
-
-# DELETEME: This is a nasty hack. Remove whenever http://github.com/bootc-dev/bootc/commit/f7b41cc1ebfc823e9de848b55773faddc59ecf88 makes it into a release
-sed -i 's|container-image-reference=.*|container-image-reference=ostree-image-signed:docker://ghcr.io/zirconium-dev/zirconium:latest|' /ostree/deploy/default/deploy/*.origin
+%post
+bootc switch --mutate-in-place --transport registry ghcr.io/zirconium-dev/zirconium:latest
 %end
 """
 
