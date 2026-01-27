@@ -5,198 +5,87 @@ on:
     branches:
       - main
   schedule:
-    - cron: "05 10 * * *" # 10:05am UTC everyday
+    - cron: '05 10 * * *'  # 10:05am UTC everyday
   push:
     branches:
       - main
     paths-ignore:
-      - "**/README.md"
+      - '**/README.md'
   workflow_dispatch:
 
 env:
-  IMAGE_DESC: "Opinionated niri + bootc image"
-  IMAGE_KEYWORDS: "bootc,niri"
-  IMAGE_LOGO_URL: "https://avatars.githubusercontent.com/u/237492973?s=400&v=4"
-  IMAGE_NAME: "${{ github.event.repository.name }}"
-  IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
+  IMAGE_DESC: "My Customized Zirconium Image"
+  IMAGE_KEYWORDS: "bootc"
+  IMAGE_LOGO_URL: "https://avatars.githubusercontent.com/u/120078124?s=200&v=4"  # Put your own image here for a fancy profile on https://artifacthub.io/!
+  IMAGE_NAME: "${{ github.event.repository.name }}"  # output image name, usually same as repo name
+  IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"  # do not edit
   DEFAULT_TAG: "latest"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}-${{ inputs.brand_name}}-${{ inputs.stream_name }}
+  cancel-in-progress: true
 
 jobs:
   build_push:
     name: Build and push image
+    runs-on: ubuntu-24.04
+
     permissions:
       contents: read
       packages: write
       id-token: write
-    timeout-minutes: 60
-    strategy:
-      fail-fast: false
-      matrix:
-        flavor: ["", "nvidia"]
-        platform: ["amd64", "arm64"]
-    runs-on: ${{ matrix.platform == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
+
     steps:
+      - name: Prepare environment
+        run: |
+          # Lowercase the image uri
+          echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> ${GITHUB_ENV}
+          echo "IMAGE_NAME=${IMAGE_NAME,,}" >> ${GITHUB_ENV}
+
+      # These stage versions are pinned by https://github.com/renovatebot/renovate
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+
+      # You only use this action if the container-storage-action proves to be unreliable, you don't need to enable both
+      # This is optional, but if you see that your builds are way too big for the runners, you can enable this by uncommenting the following lines:
+      - name: Maximize build space
+        uses: ublue-os/remove-unwanted-software@695eb75bc387dbcd9685a8e72d23439d8686cba6
+
       - name: Mount BTRFS for podman storage
-        if: ${{ matrix.platform != 'arm64' }}
+        id: container-storage-action
         uses: ublue-os/container-storage-action@911baca08baf30c8654933e9e9723cb399892140
-        continue-on-error: true
+
+        # Fallback to the remove-unwanted-software-action if github doesn't allocate enough space
+        # See: https://github.com/ublue-os/container-storage-action/pull/11
+        continue-on-error: true 
         with:
           target-dir: /var/lib/containers
           mount-opts: compress-force=zstd:2
 
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          submodules: true
-
-      - name: Change image name depending on build flavor
-        env:
-          BUILD_FLAVOR: ${{ matrix.flavor }}
-        run: |
-          if [ "${BUILD_FLAVOR}" != "" ] ; then
-            echo "IMAGE_NAME=${IMAGE_NAME}-${{ matrix.flavor }}" >> $GITHUB_ENV
-          fi
-
-      - name: Build image
-        id: build
-        env:
-          BUILD_FLAVOR: ${{ matrix.flavor }}
-        run: sudo podman build "--build-arg=BUILD_FLAVOR=${BUILD_FLAVOR}" -t "${IMAGE_NAME}:${DEFAULT_TAG}" -f ./Containerfile .
-
-      - name: Rechunk Image
-        run: sudo podman run --rm --privileged -v /var/lib/containers:/var/lib/containers --entrypoint /usr/libexec/bootc-base-imagectl "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" rechunk --max-layers 67 "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" "localhost/${IMAGE_NAME}:${DEFAULT_TAG}"
-
-      # TODO: remove me when we have a new podman in 26.04 runners
-      # needed because old podman doesn't push layer annotations for
-      # the rpm-ostree rechunker at all
-      - name: Install Podman from Brew
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-        run: |
-          /home/linuxbrew/.linuxbrew/bin/brew install podman
-
-      - name: Login to GitHub Container Registry
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          LOGIN_USER: ${{ github.actor }}
-        run: |
-          echo "${GITHUB_TOKEN}" | sudo podman login -u "${LOGIN_USER}" --password-stdin "ghcr.io"
-          echo "${GITHUB_TOKEN}" | docker login -u "${LOGIN_USER}" --password-stdin "ghcr.io" # For cosign
-
-      - name: Push to GHCR
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-        id: push
-        env:
-          IMAGE_REGISTRY: ${{ env.IMAGE_REGISTRY }}
-          IMAGE_NAME: ${{ env.IMAGE_NAME }}
-          IMAGE_DIGEST: ${{ steps.load.outputs.digest }}
-          PLATFORM: ${{ matrix.platform }}
-          MAX_RETRIES: 3
-        run: |
-          set -x
-          # HACK: push a second time so layer annotations are present
-          # TODO: remove me when https://github.com/containers/podman/issues/27796 fixed
-          for i in $(seq "${MAX_RETRIES}"); do
-            sudo /home/linuxbrew/.linuxbrew/bin/podman push --digestfile=/tmp/digestfile "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}-${PLATFORM}" && break || sleep $((5 * i));
-          done
-          echo "remote_image_digest=$(< /tmp/digestfile)" | tee "${GITHUB_OUTPUT}"
-
-          for i in $(seq "${MAX_RETRIES}"); do
-            sudo /home/linuxbrew/.linuxbrew/bin/podman push --digestfile=/tmp/digestfile "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}-${PLATFORM}" && break || sleep $((5 * i));
-          done
-          echo "remote_image_digest=$(< /tmp/digestfile)" | tee "${GITHUB_OUTPUT}"
-
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@v4.0.0
-        if: github.event_name != 'pull_request'
-
-      - name: Sign Image
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-        env:
-          REMOTE_IMAGE_DIGEST: ${{ steps.push.outputs.remote_image_digest }}
-          COSIGN_EXPERIMENTAL: false
-          COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
-        run: cosign sign -y --new-bundle-format=false --use-signing-config=false --key env://COSIGN_PRIVATE_KEY "${IMAGE_REGISTRY}/${IMAGE_NAME}@${REMOTE_IMAGE_DIGEST}"
-
-      - name: Create Job Outputs
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-        env:
-          IMAGE_NAME: ${{ env.IMAGE_NAME }}
-          PLATFORM: ${{ matrix.platform }}
-          DIGEST: ${{ steps.push.outputs.remote_image_digest }}
-        run: |
-          set -x
-          mkdir -p /tmp/outputs/digests
-          echo "${DIGEST}" | tee "/tmp/outputs/digests/${IMAGE_NAME}-${PLATFORM}.txt"
-
-      - name: Upload Output Artifacts
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v5
-        with:
-          name: ${{ env.IMAGE_NAME }}-${{ matrix.platform }}
-          retention-days: 1
-          if-no-files-found: error
-          path: |
-            /tmp/outputs/digests/*.txt
-
-  manifest:
-    name: Create Manifest
-    runs-on: ubuntu-latest
-    if: always()
-    needs:
-      - build_push
-    container:
-      image: docker.io/library/alpine:latest
-      options: --privileged --security-opt seccomp=unconfined
-    permissions:
-      contents: read
-      packages: write
-      id-token: write
-    steps:
-      - name: Install dependencies
-        run: apk add bash coreutils curl docker findutils fuse-overlayfs git grep jq podman sed
-
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@v4.0.0
-        if: github.event_name != 'pull_request'
-
-      - name: Exit on failure
-        shell: bash
-        env:
-          JOBS: ${{ toJson(needs) }}
-        run: |
-          for i in $(jq -r 'to_entries[] | .value.result' <<< "${JOBS}"); do
-            if [ "$i" != "success" ] && [ "$i" != "skipped" ]; then
-              echo "Status check not okay!"
-              exit 1
-            fi
-          done
-
-        # This generates a timestamp like what is defined on the ArtifactHub documentation
-        # E.G: 2022-02-08T15:38:15Z'
-        # https://artifacthub.io/docs/topics/repositories/container-images/
-        # https://linux.die.net/man/1/date
       - name: Get current date
         id: date
-        run: echo "date=$(date -u +%Y\-%m\-%d\T%H\:%M\:%S\Z)" | tee "${GITHUB_OUTPUT}"
+        run: |
+          # This generates a timestamp like what is defined on the ArtifactHub documentation
+          # E.G: 2022-02-08T15:38:15Z'
+          # https://artifacthub.io/docs/topics/repositories/container-images/
+          # https://linux.die.net/man/1/date
+          echo "date=$(date -u +%Y\-%m\-%d\T%H\:%M\:%S\Z)" >> $GITHUB_OUTPUT
 
+      # Image metadata for https://artifacthub.io/ - This is optional but is highly recommended so we all can get a index of all the custom images
+      # The metadata by itself is not going to do anything, you choose if you want your image to be on ArtifactHub or not.
       - name: Image Metadata
         uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
         id: metadata
         with:
+          # This generates all the tags for your image, you can add custom tags here too!
+          # Default tags are "$DEFAULT_TAG" and "$DEFAULT_TAG.$date".
           tags: |
             type=raw,value=${{ env.DEFAULT_TAG }}
             type=raw,value=${{ env.DEFAULT_TAG }}.{{date 'YYYYMMDD'}}
             type=raw,value={{date 'YYYYMMDD'}}
-            type=ref,event=pr
             type=sha,enable=${{ github.event_name == 'pull_request' }}
+            type=ref,event=pr
           labels: |
-            containers.bootc=1
-            io.artifacthub.package.deprecated=false
-            io.artifacthub.package.keywords=${{ env.IMAGE_KEYWORDS }}
-            io.artifacthub.package.license=Apache-2.0
-            io.artifacthub.package.logo-url=${{ env.IMAGE_LOGO_URL }}
-            io.artifacthub.package.prerelease=false
             io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/${{ github.sha }}/README.md
             org.opencontainers.image.created=${{ steps.date.outputs.date }}
             org.opencontainers.image.description=${{ env.IMAGE_DESC }}
@@ -206,79 +95,94 @@ jobs:
             org.opencontainers.image.url=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/tree/${{ github.sha }}
             org.opencontainers.image.vendor=${{ github.repository_owner }}
             org.opencontainers.image.version=${{ env.DEFAULT_TAG }}.{{date 'YYYYMMDD'}}
+            io.artifacthub.package.deprecated=false
+            io.artifacthub.package.keywords=${{ env.IMAGE_KEYWORDS }}
+            io.artifacthub.package.license=Apache-2.0
+            io.artifacthub.package.logo-url=${{ env.IMAGE_LOGO_URL }}
+            io.artifacthub.package.prerelease=false
+            containers.bootc=1
+          sep-tags: " "
+          sep-annotations: " "
 
-      - name: Fetch Build Outputs
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v6
+      - name: Build Image
+        id: build_image
+        uses: redhat-actions/buildah-build@7a95fa7ee0f02d552a32753e7414641a04307056 # v2
         with:
-          pattern: ${{ env.IMAGE_NAME }}-*
-          merge-multiple: true
-          path: /tmp/artifacts
+          containerfiles: |
+            ./Containerfile
+          # Postfix image name with -custom to make it a little more descriptive
+          # Syntax: https://docs.github.com/en/actions/learn-github-actions/expressions#format
+          image: ${{ env.IMAGE_NAME }}
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          oci: false
 
-      - name: Load Outputs
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-        shell: bash
-        id: load-outputs
-        run: |
-          set -x
-          OUTCSV="$(mktemp)"
-          for digest_file in /tmp/artifacts/*.txt; do
-            # Extract the platform from the file name
-            PLATFORM="$(basename "${digest_file}" ".txt" | sed 's/.*-//g')"
-            IMAGE_NAME="$(basename "${digest_file}" ".txt" | grep -Po ".*-" | sed 's/-$//')"
-            DIGEST="$(< "${digest_file}")"
-            echo "${PLATFORM},${IMAGE_NAME},${DIGEST}" | tee -a "${OUTCSV}"
-          done
-          echo "OUTPUT_CSV=$(base32 -w 0 < "${OUTCSV}")" | tee -a "${GITHUB_OUTPUT}"
+      # Rechunk is a script that we use on Universal Blue to make sure there isnt a single huge layer when your image gets published.
+      # This does not make your image faster to download, just provides better resumability and fixes a few errors.
+      # Documentation for Rechunk is provided on their github repository at https://github.com/hhd-dev/rechunk
+      # You can enable it by uncommenting the following lines:
+      # - name: Run Rechunker
+      #   id: rechunk
+      #   uses: ublue-os/legacy-rechunk@a925083d9af7cb04b3e2a6e8c01bfa495f38b710 # v1.0.0
+      #   with:
+      #     rechunk: 'ghcr.io/ublue-os/legacy-rechunk:v1.0.0-x86_64'
+      #     ref: "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+      #     prev-ref: "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+      #     skip_compression: true
+      #     version: ${{ env.CENTOS_VERSION }}
+      #     labels: ${{ steps.metadata.outputs.labels }} # Rechunk strips out all the labels during build, this needs to be reapplied here with newline separator
 
+      # This is necessary so that the podman socket can find the rechunked image on its storage
+      # - name: Load in podman and tag
+      #   run: |
+      #     IMAGE=$(podman pull ${{ steps.rechunk.outputs.ref }})
+      #     sudo rm -rf ${{ steps.rechunk.outputs.output }}
+      #     for tag in ${{ steps.metadata.outputs.tags }}; do
+      #       podman tag $IMAGE ${{ env.IMAGE_NAME }}:$tag
+      #     done
+
+      # These `if` statements are so that pull requests for your custom images do not make it publish any packages under your name without you knowing
+      # They also check if the runner is on the default branch so that things like the merge queue (if you enable it), are going to work
       - name: Login to GitHub Container Registry
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-        env:
-          REGISTRY: ghcr.io
-        run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | podman login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish manifest with unified architecture and sign
-        shell: bash
+      - name: Push To GHCR
+        uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        id: push
         env:
+          REGISTRY_USER: ${{ github.actor }}
+          REGISTRY_PASSWORD: ${{ github.token }}
+        with:
+          registry: ${{ env.IMAGE_REGISTRY }}
+          image: ${{ env.IMAGE_NAME }}
+          tags: ${{ steps.metadata.outputs.tags }}
+          username: ${{ env.REGISTRY_USER }}
+          password: ${{ env.REGISTRY_PASSWORD }}
+
+      # This section is optional and only needs to be enabled if you plan on distributing
+      # your project for others to consume. You will need to create a public and private key
+      # using Cosign and save the private key as a repository secret in Github for this workflow
+      # to consume. For more details, review the image signing section of the README.
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        with:
+          cosign-release: 'v2.6.1'
+
+      - name: Sign container image
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        run: |
+          IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}"
+          for tag in ${{ steps.metadata.outputs.tags }}; do
+            cosign sign -y --key env://COSIGN_PRIVATE_KEY $IMAGE_FULL:$tag
+          done
+        env:
+          TAGS: ${{ steps.push.outputs.digest }}
           COSIGN_EXPERIMENTAL: false
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
-          LABELS: ${{ steps.metadata.outputs.labels }}
-          OUTPUT_CSV: ${{ steps.load-outputs.outputs.OUTPUT_CSV }}
-          TAGS: ${{ steps.metadata.outputs.tags }}
-        run: |
-          set -x
-
-          OUTPUT_CSV_FILE="$(mktemp)"
-          echo "${OUTPUT_CSV}" | base32 -d | tee "${OUTPUT_CSV_FILE}"
-
-          # This is insanely dumb, please PR if you have a better solution ~ @tulilirockz :3c
-          IMAGES=$(cat "${OUTPUT_CSV_FILE}" | while IFS=$'\n' read -r ENTRY ; do echo "${ENTRY}" | cut -d, -f2 ; done | sort | uniq | tr "\n" " " | sed 's/.$//')
-          for TARGET_IMAGE in ${IMAGES} ; do
-            TARGET_MANIFEST="${IMAGE_REGISTRY}/${TARGET_IMAGE}"
-            podman manifest create "${TARGET_MANIFEST}"
-
-            PLATFORMS=$(grep -F -e "${IMAGE}" "${OUTPUT_CSV_FILE}" | while IFS=$'\n' read -r ENTRY ; do echo "${ENTRY}" | cut -d, -f1 ; done | sort | uniq | tr "\n" " " | sed 's/.$//')
-            for TARGET_PLATFORM in ${PLATFORMS} ; do
-              TARGET_DIGEST="$(grep -F -e ",${TARGET_IMAGE}," "${OUTPUT_CSV_FILE}" | grep -F -e "${TARGET_PLATFORM}" | cut -d, -f3 | tr -d "\n")"
-              podman manifest add "${TARGET_MANIFEST}" "${TARGET_MANIFEST}@${TARGET_DIGEST}" --arch "${TARGET_PLATFORM}"
-            done
-
-            while IFS= read -r LABEL; do
-              podman manifest annotate --index --annotation "${LABEL}" "${TARGET_MANIFEST}"
-            done <<< "${LABELS}"
-
-            while IFS= read -r TAG; do
-              podman manifest push --all=false --digestfile=/tmp/digestfile "${TARGET_MANIFEST}" "${TARGET_MANIFEST}:${TAG}"
-            done <<< "${TAGS}"
-
-          # HACK: push a second time so layer annotations are present
-          # TODO: remove me when https://github.com/containers/podman/issues/27796 fixed
-            while IFS= read -r TAG; do
-              podman manifest push --all=false --digestfile=/tmp/digestfile "${TARGET_MANIFEST}" "${TARGET_MANIFEST}:${TAG}"
-            done <<< "${TAGS}"
-
-            cosign sign -y --new-bundle-format=false --use-signing-config=false --key env://COSIGN_PRIVATE_KEY "${TARGET_MANIFEST}@$(< /tmp/digestfile)"
-          done
