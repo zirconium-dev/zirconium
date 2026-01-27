@@ -1,4 +1,6 @@
-image := env("IMAGE_FULL", "zirconium:latest")
+image := env("IMAGE_FULL", "zirca:latest")
+image_name := env("IMAGE_NAME", "zirca") # output image name, usually same as repo name, change as needed
+default_tag := env("DEFAULT_TAG", "latest")
 filesystem := env("BUILD_FILESYSTEM", "ext4")
 
 iso $image=image:
@@ -45,6 +47,22 @@ disk-image $filesystem=filesystem:
 
 quick-iterate:
     #!/usr/bin/env bash
-    podman build -t zirconium:latest .
+    podman build -t zirca:latest .
     just rootful
     BUILD_BASE_DIR=/tmp just disk-image
+
+build $target_image=image_name $tag=default_tag:
+    #!/usr/bin/env bash
+
+    BUILD_ARGS=()
+    if [[ -z "$(git status -s)" ]]; then
+        BUILD_ARGS+=("--build-arg" "SHA_HEAD_SHORT=$(git rev-parse --short HEAD)")
+    fi
+
+    podman build \
+        "${BUILD_ARGS[@]}" \
+        --pull=newer \
+        --tag "${target_image}:${tag}" \
+        .
+
+

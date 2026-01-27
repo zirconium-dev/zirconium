@@ -1,8 +1,0 @@
-[Unit]
-Description=Chezmoi Update
-
-[Service]
-ExecStart=mkdir -p %h/.config/zirconium/chezmoi
-ExecStart=touch %h/.config/zirconium/chezmoi/chezmoi.toml
-ExecStart=sh -c 'yes s | chezmoi apply --no-tty --keep-going -S /usr/share/zirconium/zdots --verbose --config %h/.config/zirconium/chezmoi/chezmoi.toml'
-Type=oneshot
