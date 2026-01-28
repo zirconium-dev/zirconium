@@ -94,15 +94,12 @@ jobs:
           MAX_RETRIES: 3
         run: |
           set -x
-          # HACK: push a second time so layer annotations are present
+          # HACK: push two times so layer annotations are present
           # TODO: remove me when https://github.com/containers/podman/issues/27796 fixed
-          for i in $(seq "${MAX_RETRIES}"); do
-            sudo /home/linuxbrew/.linuxbrew/bin/podman push --digestfile=/tmp/digestfile "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}-${PLATFORM}" && break || sleep $((5 * i));
-          done
-          echo "remote_image_digest=$(< /tmp/digestfile)" | tee "${GITHUB_OUTPUT}"
-
-          for i in $(seq "${MAX_RETRIES}"); do
-            sudo /home/linuxbrew/.linuxbrew/bin/podman push --digestfile=/tmp/digestfile "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}-${PLATFORM}" && break || sleep $((5 * i));
+          for i in $(seq 2); do
+            for j in $(seq "${MAX_RETRIES}"); do
+              sudo /home/linuxbrew/.linuxbrew/bin/podman push --digestfile=/tmp/digestfile "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}-${PLATFORM}" && break || sleep $((5 * j));
+            done
           done
           echo "remote_image_digest=$(< /tmp/digestfile)" | tee "${GITHUB_OUTPUT}"
 
@@ -270,15 +267,13 @@ jobs:
               podman manifest annotate --index --annotation "${LABEL}" "${TARGET_MANIFEST}"
             done <<< "${LABELS}"
 
-            while IFS= read -r TAG; do
-              podman manifest push --all=false --digestfile=/tmp/digestfile "${TARGET_MANIFEST}" "${TARGET_MANIFEST}:${TAG}"
-            done <<< "${TAGS}"
-
-          # HACK: push a second time so layer annotations are present
+          # HACK: push two times so layer annotations are present
           # TODO: remove me when https://github.com/containers/podman/issues/27796 fixed
-            while IFS= read -r TAG; do
-              podman manifest push --all=false --digestfile=/tmp/digestfile "${TARGET_MANIFEST}" "${TARGET_MANIFEST}:${TAG}"
-            done <<< "${TAGS}"
+            for i in $(seq 2); do
+              while IFS= read -r TAG; do
+                podman manifest push --all=false --digestfile=/tmp/digestfile "${TARGET_MANIFEST}" "${TARGET_MANIFEST}:${TAG}"
+              done <<< "${TAGS}"
+            done
 
             cosign sign -y --new-bundle-format=false --use-signing-config=false --key env://COSIGN_PRIVATE_KEY "${TARGET_MANIFEST}@$(< /tmp/digestfile)"
           done
