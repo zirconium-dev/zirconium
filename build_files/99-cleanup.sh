@@ -5,6 +5,9 @@ set -xeuo pipefail
 # See https://github.com/CentOS/centos-bootc/issues/191
 mkdir -p /var/roothome
 
+# Revert back to upstream defaults
+dnf config-manager setopt keepcache=0
+
 HOME_URL="https://github.com/zirconium-dev/zirconium"
 echo "zirconium" | tee "/etc/hostname"
 # OS Release File (changed in order with upstream)

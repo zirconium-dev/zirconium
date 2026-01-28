@@ -16,14 +16,17 @@ ARG BUILD_FLAVOR="${BUILD_FLAVOR:-}"
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/var \
     --mount=type=tmpfs,dst=/tmp \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
     /ctx/build/00-base.sh
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/var \
     --mount=type=tmpfs,dst=/tmp \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
     /ctx/build/01-theme.sh
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
     /ctx/build/02-nvidia.sh
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
