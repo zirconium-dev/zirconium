@@ -57,9 +57,6 @@ dnf -y  --setopt=install_weak_deps=False install --enablerepo=fedora-steam \
     -x PackageKit* \
     steam
 
-### TODO: Move this to cleanup
-dnf config-manager setopt fedora-multimedia.enabled=0
-
 ### Instal Hblock
 dnf -y copr enable pesader/hblock
 dnf -y install hblock

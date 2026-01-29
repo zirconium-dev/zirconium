@@ -47,6 +47,9 @@ g greeter 767
 u greeter 767 "Greetd greeter"
 EOF
 
+### Disable fedora-multmedia here again 
+dnf config-manager setopt fedora-multimedia.enabled=0
+
 # These files NEED to be on the image.
 grep -F -e "ghcr.io/zirconium-dev" /etc/containers/policy.json
 stat /etc/pki/containers/zirconium.pub
