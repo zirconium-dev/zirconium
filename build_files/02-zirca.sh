@@ -45,6 +45,10 @@ dnf -y copr enable ilyaz/LACT
 dnf -y install lact
 dnf -y copr disable ilyaz/LACT
 
+### Add mesa from negativo
+dnf config-manager setopt fedora-multimedia.enabled=1
+dnf -y swap --repo=fedora-multimedia mesa-filesystem mesa-filesystem 
+
 ### Add steam into base image
 ### I was using an container to install Steam but after an shower thinking its kinda dumb this image is to provide me an stable base
 dnf config-manager addrepo --from-repofile=https://negativo17.org/repos/fedora-steam.repo
@@ -52,6 +56,9 @@ dnf config-manager setopt fedora-steam.enabled=0
 dnf -y  --setopt=install_weak_deps=False install --enablerepo=fedora-steam \
     -x PackageKit* \
     steam
+
+### TODO: Move this to cleanup
+dnf config-manager setopt fedora-multimedia.enabled=0
 
 ### Instal Hblock
 dnf -y copr enable pesader/hblock
