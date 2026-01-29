@@ -52,7 +52,4 @@ grep -F -e "ghcr.io/zirconium-dev" /etc/containers/policy.json
 stat /etc/pki/containers/zirconium.pub
 stat /etc/pki/containers/zirconium.pub
 stat /usr/bin/luks*tpm*
-stat /usr/bin/uupd
-stat /usr/lib/systemd/system/uupd.service
-stat /usr/lib/systemd/system/uupd.timer
 

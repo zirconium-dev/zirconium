@@ -9,9 +9,10 @@ Zirconium is great and target a lot of devices, unfortunately i dont own a lot o
 - Removed systemd-resolved and systemd timesyncd
 - Removed a lot of firmwares
 - Removed Brew
+- Removed UUPD 
 - Added Cachyos kernel, Cachyos settings, Cachy Firefox settings, and Scx/Manager
-- Added Mesa from Terra and Falcond 
-- Added LACT, OpenRGB, Firefox, gpu-screen-recorder-ui, neovim, starship
+- Added Steam, Mangohud and MangoJuice 
+- Added LACT, OpenRGB, Firefox, gpu-screen-recorder-ui, neovim, starship, falcond
 - Hardcoded Portuguese Language (The world is now Brasil!)
 
 ## Can I use it?

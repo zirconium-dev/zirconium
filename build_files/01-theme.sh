@@ -36,7 +36,6 @@ dnf -y \
 install -Dpm0644 -t /usr/lib/pam.d/ /usr/share/quickshell/dms/assets/pam/* # Fixes long login times on fingerprint auth
 
 dnf -y install \
-    flatpak \
     fpaste \
     fzf \
     git-core \
@@ -79,7 +78,6 @@ dnf config-manager setopt fedora-multimedia.enabled=0
 dnf -y install --enablerepo=fedora-multimedia \
     -x PackageKit* \
     ffmpeg libavcodec @multimedia gstreamer1-plugins-{bad-free,bad-free-libs,good,base} lame{,-libs} libjxl ffmpegthumbnailer
-
 add_wants_niri() {
     sed -i "s/\[Unit\]/\[Unit\]\nWants=$1/" "/usr/lib/systemd/user/niri.service"
 }

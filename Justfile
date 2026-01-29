@@ -4,7 +4,7 @@ filesystem := env("BUILD_FILESYSTEM", "ext4")
 iso $image=image:
     #!/usr/bin/env bash
     mkdir -p output
-    sudo podman pull "${image}"
+    sudo podman pull ghcr.io/mgspl/"${image}"
     sudo podman run \
         --rm \
         -it \

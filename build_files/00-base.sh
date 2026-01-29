@@ -11,6 +11,7 @@ dnf -y remove \
   toolbox
 
 # These were manually picked out from a Bluefin comparison with `rpm -qa --qf="%{NAME}\n" `
+# Installing Flatpak,Distrobox,Bootc (Those are recommended by uupd) here to purge uupd from image
 dnf -y install \
   -x PackageKit* \
   NetworkManager \
@@ -24,7 +25,10 @@ dnf -y install \
   alsa-firmware \
   alsa-sof-firmware \
   alsa-tools-firmware \
+  bootc \
   firewalld \
+  flatpak \
+  distrobox \
   fuse \
   fuse-common \
   fwupd \
@@ -38,7 +42,6 @@ dnf -y install \
   man-db \
   man-pages \
   mobile-broadband-provider-info \
-  pam_yubico \
   plymouth \
   plymouth-system-theme \
   realtek-firmware \
@@ -54,18 +57,12 @@ dnf -y install \
 
 systemctl enable firewalld
 
+sed -i 's|^ExecStart=.*|ExecStart=/usr/bin/bootc update --quiet|' /usr/lib/systemd/system/bootc-fetch-apply-updates.service
+sed -i 's|^OnUnitInactiveSec=.*|OnUnitInactiveSec=7d\nPersistent=true|' /usr/lib/systemd/system/bootc-fetch-apply-updates.timer
 sed -i 's|#AutomaticUpdatePolicy.*|AutomaticUpdatePolicy=stage|' /etc/rpm-ostreed.conf
 sed -i 's|#LockLayering.*|LockLayering=true|' /etc/rpm-ostreed.conf
 
-dnf -y copr enable ublue-os/packages
-dnf -y copr disable ublue-os/packages
-dnf -y --enablerepo copr:copr.fedorainfracloud.org:ublue-os:packages install uupd ublue-os-udev-rules
-
-# ts so annoying :face_holding_back_tears: :v: 67
-sed -i 's|uupd|& --disable-module-distrobox|' /usr/lib/systemd/system/uupd.service
-
-systemctl enable uupd.timer
-
+systemctl enable bootc-fetch-apply-updates
 
 if [ "$(rpm -E "%{fedora}")" == 43 ] ; then
   dnf -y copr enable ublue-os/flatpak-test

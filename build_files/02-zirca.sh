@@ -2,11 +2,6 @@
 
 set -ouex pipefail
 
-### Install Starship
-dnf -y copr enable atim/starship
-dnf -y install starship
-dnf -y copr disable atim/starship
-
 ### Install Kernel Cachyos (Stole From Piperita)
 for pkg in kernel kernel-core kernel-modules kernel-modules-core; do
   rpm --erase $pkg --nodeps
@@ -40,34 +35,29 @@ depmod -a "$(ls -1 /lib/modules/ | tail -1)"
 dracut --no-hostonly --kver "$KERNEL_VERSION" --reproducible --zstd -v --add ostree -f "/usr/lib/modules/$KERNEL_VERSION/initramfs.img"
 chmod 0600 "/usr/lib/modules/${KERNEL_VERSION}/initramfs.img"
 
-### Install LACT
+### Enable Nobara and install things
+dnf -y copr enable gloriouseggroll/nobara-43
+dnf -y --setopt=install_weak_deps=False install gpu-screen-recorder-ui falcond falcond-profiles falcond-gui mangohud mangojuice starship
+dnf -y copr disable gloriouseggroll/nobara-43
+
+### Lact from nobara is weird
 dnf -y copr enable ilyaz/LACT
 dnf -y install lact
-systemctl enable lactd
 dnf -y copr disable ilyaz/LACT
 
-### Install Gpu Screen Recorder
-dnf -y copr enable brycensranch/gpu-screen-recorder-git
-dnf -y install gpu-screen-recorder-ui
-dnf -y copr disable brycensranch/gpu-screen-recorder-git
+### Add steam into base image
+### I was using an container to install Steam but after an shower thinking its kinda dumb this image is to provide me an stable base
+dnf config-manager addrepo --from-repofile=https://negativo17.org/repos/fedora-steam.repo
+dnf config-manager setopt fedora-steam.enabled=0
+dnf -y  --setopt=install_weak_deps=False install --enablerepo=fedora-steam \
+    -x PackageKit* \
+    steam
 
 ### Instal Hblock
 dnf -y copr enable pesader/hblock
 dnf -y install hblock
 systemctl enable hblock.timer
 dnf -y copr disable pesader/hblock
-
-### Install Falcon Gamemode and Mesa from Terra
-dnf -y install --nogpgcheck --repofrompath 'terra,https://repos.fyralabs.com/terra$releasever' terra-release{,-extras,-mesa} 
-dnf -y config-manager setopt "*terra*".priority=3 "*terra*".exclude="nerd-fonts topgrade scx-tools scx-scheds steam python3-protobuf zlib-devel"  
-dnf -y config-manager setopt "terra-mesa".enabled=true   
-dnf -y config-manager setopt "*fedora*".exclude="mesa-* kernel-core-* kernel-modules-* kernel-uki-virt-*" 
-dnf -y swap --repo=terra-mesa mesa-filesystem mesa-filesystem 
-dnf -y install falcond falcond-profiles falcond-gui
-# Not being added into falcond group hope this helps
-getent group 'falcond' >/dev/null || groupadd -f -r 'falcond' || :
-usermod -aG 'falcond' root || :
-
 
 ### Cachy firefox settings
 mkdir -p /usr/lib/firefox/browser/defaults/preferences/
@@ -84,5 +74,6 @@ dnf -y --setopt=install_weak_deps=False install \
 	firefox
 
 systemctl enable openrgb
+systemctl enable lactd
 
 echo 'LANG=pt_BR.UTF-8' | tee -a "/etc/locale.conf"
