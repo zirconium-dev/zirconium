@@ -75,6 +75,7 @@ dnf -y --setopt=install_weak_deps=False install \
 	neovim   \
 	openrgb	  \
 	openrgb-udev-rules \
+	adw-gtk3-theme \
 	firefox
 
 systemctl enable openrgb
