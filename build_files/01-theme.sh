@@ -77,6 +77,7 @@ dnf -y install \
     webp-pixbuf-loader \
     wireplumber \
     wl-clipboard \
+    wl-mirror \
     xdg-desktop-portal-gnome \
     xdg-desktop-portal-gtk \
     xdg-terminal-exec \
