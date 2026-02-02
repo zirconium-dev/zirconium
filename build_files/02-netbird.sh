@@ -13,4 +13,4 @@ repo_gpgcheck=1
 EOF
 
 dnf config-manager -y addrepo --from-repofile=/etc/yum.repos.d/netbird.repo
-dnf install -y libappindicator-gtk3 libappindicator netbird-ui
+dnf install -y libappindicator-gtk3 libappindicator netbird-ui || echo "Oh snap! Something went wrong... Oh well!"
