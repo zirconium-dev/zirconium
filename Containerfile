@@ -26,6 +26,12 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     /ctx/build/01-theme.sh
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    --mount=type=tmpfs,dst=/var \
+    --mount=type=tmpfs,dst=/tmp \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    /ctx/build/02-netbird.sh
+
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     /ctx/build/99-cleanup.sh
 
 RUN rm -rf /var/* && mkdir /var/tmp && bootc container lint
