@@ -156,7 +156,7 @@ fi
 
 if [ "$(arch)" != "aarch64" ] ; then
   dnf install -y \
-    virtualbox-guest-additions \
     thermald \
-    powerstat
+    powerstat \
+    powertop
 fi
