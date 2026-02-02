@@ -16,8 +16,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: ["amd64", "arm64"]
-        flavor: ["", "-nvidia"]
+        platform: ["amd64"]
+        flavor: [""]
     runs-on: ${{ matrix.platform == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
 
     steps:
