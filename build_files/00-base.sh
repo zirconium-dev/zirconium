@@ -43,14 +43,18 @@ dnf -y install \
   alsa-sof-firmware \
   alsa-tools-firmware \
   atheros-firmware \
+  atop \
   audispd-plugins \
   audit \
   brcmfmac-firmware \
+  btop \
   cifs-utils \
   cups \
   cups-pk-helper \
   dymo-cups-drivers \
+  et \
   firewalld \
+  fish \
   fprintd \
   fprintd-pam \
   fuse \
@@ -66,6 +70,7 @@ dnf -y install \
   ibus \
   ifuse \
   intel-audio-firmware \
+  intel-undervolt \
   iwlegacy-firmware \
   iwlwifi-dvm-firmware \
   iwlwifi-mvm-firmware \
@@ -79,6 +84,7 @@ dnf -y install \
   man-pages \
   mobile-broadband-provider-info \
   mt7xxx-firmware \
+  nebula \
   nxpwireless-firmware \
   open-vm-tools \
   open-vm-tools-desktop \
@@ -89,12 +95,14 @@ dnf -y install \
   plymouth-system-theme \
   printer-driver-brlaser \
   ptouch-driver \
+  python3-devel \
   qemu-guest-agent \
   realtek-firmware \
   rsync \
   spice-vdagent \
   steam-devices \
   switcheroo-control \
+  syncthing \
   system-config-printer-libs \
   system-config-printer-udev \
   systemd-container \
