@@ -66,7 +66,7 @@ dnf -y install \
   gvfs-nfs \
   gvfs-smb \
   hplip \
-  hyperv-daemons \
+  htop \
   ibus \
   ifuse \
   intel-audio-firmware \
