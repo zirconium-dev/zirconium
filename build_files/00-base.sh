@@ -84,6 +84,7 @@ dnf -y install \
   mobile-broadband-provider-info \
   mt7xxx-firmware \
   nebula \
+  nix \
   nxpwireless-firmware \
   open-vm-tools \
   open-vm-tools-desktop \
