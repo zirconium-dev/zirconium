@@ -109,6 +109,7 @@ dnf -y install \
   tuned-ppd \
   unzip \
   usb_modeswitch \
+  uv \
   uxplay \
   vpnc \
   whois \
