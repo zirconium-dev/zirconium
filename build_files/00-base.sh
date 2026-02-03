@@ -87,6 +87,8 @@ dnf -y install \
   pcsc-lite \
   plymouth \
   plymouth-system-theme \
+  powerstat \
+  powertop \
   printer-driver-brlaser \
   ptouch-driver \
   python3-devel \
@@ -101,6 +103,7 @@ dnf -y install \
   system-config-printer-udev \
   systemd-container \
   systemd-oomd-defaults \
+  thermald \
   tiwilink-firmware \
   tuned \
   tuned-ppd \
@@ -152,11 +155,4 @@ if [ "$(rpm -E "%{fedora}")" == 43 ] ; then
   dnf -y --repo=copr:copr.fedorainfracloud.org:ublue-os:flatpak-test swap flatpak-libs flatpak-libs
   dnf -y --repo=copr:copr.fedorainfracloud.org:ublue-os:flatpak-test swap flatpak-session-helper flatpak-session-helper
   rpm -q flatpak --qf "%{NAME} %{VENDOR}\n" | grep ublue-os
-fi
-
-if [ "$(arch)" != "aarch64" ] ; then
-  dnf install -y \
-    thermald \
-    powerstat \
-    powertop
 fi
