@@ -130,6 +130,10 @@ tee /usr/lib/tmpfiles.d/resolved-default.conf <<'EOF'
 L /etc/resolv.conf - - - - ../run/systemd/resolve/stub-resolv.conf
 EOF
 
+tee /usr/lib/tmpfiles.d/nix.conf <<'EOF'
+L /nix/ - - - - /var/nix
+EOF
+
 systemctl preset systemd-resolved.service
 
 dnf -y copr enable ublue-os/packages
