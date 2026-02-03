@@ -10,12 +10,6 @@ dnf -y install 'dnf5-command(config-manager)'
 # Speeds up local builds
 dnf config-manager setopt keepcache=1
 
-dnf config-manager addrepo --from-repofile=https://pkgs.tailscale.com/stable/fedora/tailscale.repo
-dnf config-manager setopt tailscale-stable.enabled=0
-dnf -y install --enablerepo='tailscale-stable' tailscale
-
-systemctl enable tailscaled
-
 dnf -y remove \
   console-login-helper-messages \
   chrony \
