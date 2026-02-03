@@ -64,6 +64,7 @@ dnf -y install \
   ibus \
   ifuse \
   intel-audio-firmware \
+  intel-undervolt \
   iwlegacy-firmware \
   iwlwifi-dvm-firmware \
   iwlwifi-mvm-firmware \
