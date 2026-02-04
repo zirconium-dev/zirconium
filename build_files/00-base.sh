@@ -108,6 +108,7 @@ dnf -y install \
   tiwilink-firmware \
   tuned \
   tuned-ppd \
+  tuned-utils \
   unzip \
   usb_modeswitch \
   uv \
