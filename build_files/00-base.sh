@@ -120,6 +120,7 @@ dnf -y install \
 
 systemctl enable auditd
 systemctl enable firewalld
+systemctl enable intel-undervolt
 systemctl enable nebula
 
 sed -i 's|^ExecStart=.*|ExecStart=/usr/bin/bootc update --quiet|' /usr/lib/systemd/system/bootc-fetch-apply-updates.service
