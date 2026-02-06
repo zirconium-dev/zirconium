@@ -1,19 +1,27 @@
 #!/usr/bin/env bash
 
-IGNORE_MANUAL="wheel|root|sudo|nobody"
-for manually_created_user in $(grep -E -e ".*:[1-3][[:digit:]]{3}:.*" "$1") ; do
-  # `grep` matched on a group with GID [1-3]000 or so 
-  if [ ! -z "$(cut -f4 -d: <<< "${manually_created_user}")" ] ; then
-    continue
-  fi
-  IGNORE_MANUAL="$(cut -f1,3 -d: --output-delimiter="|" <<< "${manually_created_user}")|${IGNORE_MANUAL:-}"
-  for related_group in $(grep "$(cut -f1 -d: <<< ${manually_created_user})" "$1"); do
-    # Deduplicates matches for the same group/user
-    if [ "$(cut -f1 <<< "${related_group}")" == "$(cut -f1 <<< "${manually_created_user}")" ] ; then
-      continue
-    fi
-    IGNORE_MANUAL="$(cut -f1 -d: <<< "${related_group}")|${IGNORE_MANUAL:-}"
-  done
-done
+# To use this script, you'll want to put this in your systemd service:
+# rm /etc/gshadow
+# systemd-sysusers
+# (run this script)
+# systemd-tmpfiles --create --remove --boot --exclude-prefix=/dev
+# This will populate /etc/group successfully, and then populate /etc/gshadow
+# with any missing groups that we nuked when we removed /etc/gshadow
 
-grep --no-filename -e "^g" /usr/lib/sysusers.d/*.conf | grep -v -E -e "${IGNORE_MANUAL}" | tr -s " " | cut -d" " -f2 | uniq | xargs -I{} sed -i "/{}/d" "${1}"
+GSHADOW_FILE="/etc/gshadow"
+GROUP_FILE="/etc/group"
+
+for f in $(cat $GROUP_FILE); do
+   cut -f1 -d':' <(echo $f) | xargs -I{} grep ^"{}" $GSHADOW_FILE &>/dev/null || \
+     echo $(cut -f1 -d':' <(echo $f)):'!*::' >> $GSHADOW_FILE
+done && \
+cat > /etc/.zirc-rechunker-fix-do-not-removr <<EOF
+This file is for the group fix for the legacy rechunker. Do not remove this file, otherwise your groups will be modified.
+On Fedora Silverblue and many Universal Blue images, the groups are split into 2 files: /usr/lib/group, and /etc/group.
+This is a bad implementation that breaks the ability to rebase to an image that doesn't have a /usr/lib/group file. [1]
+This is functionality that is created by nss-altfiles[2], which is NOT standard, and modifies glibc to use /usr/lib/group.
+
+
+[1]: https://github.com/ublue-os/main/issues/759
+[2]: https://github.com/aperezdc/nss-altfiles
+EOF

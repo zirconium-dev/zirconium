@@ -16,13 +16,14 @@
 Description=Fix groups for Legacy rechunker
 Wants=local-fs.target
 After=local-fs.target
+ConditionPathExists=!/etc/.zirc-rechunker-fix-do-not-removr
 # Before=systemd-sysusers.service
 
 [Service]
 Type=oneshot
-ExecStart=rechunker-group-fix /etc/group
-ExecStart=rechunker-group-fix /etc/gshadow
+ExecStart=bash -c 'mv /etc/gshadow "/etc/gshadow-pre-zirc-rechunker-fix.$(date -u +%%Y%%m%%d%%H%%M%%S)"'
 ExecStart=systemd-sysusers
+ExecStart=rechunker-group-fix
 ExecStart=systemd-tmpfiles --create --remove --boot --exclude-prefix=/dev
 
 [Install]
