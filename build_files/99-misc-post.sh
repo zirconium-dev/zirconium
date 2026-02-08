@@ -29,6 +29,7 @@ rm -rf /usr/lib/systemd/system/flatpak-add-fedora-repos.service
 systemctl enable flatpak-add-flathub-repos.service
 
 rm -rf /usr/bin/chsh # footgun
+rm -rf /usr/src # we dont need anything here
 
 systemctl enable rechunker-group-fix.service
 
