@@ -14,7 +14,7 @@ GROUP_FILE="/etc/group"
 for f in $(cat $GROUP_FILE); do
    cut -f1 -d':' <(echo $f) | xargs -I{} grep ^"{}" $GSHADOW_FILE &>/dev/null || \
      echo $(cut -f1 -d':' <(echo $f)):'!*::' >> $GSHADOW_FILE
-done && \
+done
 cat > /etc/.rechunker-fix <<EOF
 This file is for the group fix for the legacy rechunker. Do not remove this file, otherwise your groups will be modified.
 On Fedora Silverblue and many Universal Blue images, the groups are split into 2 files: /usr/lib/group, and /etc/group.
