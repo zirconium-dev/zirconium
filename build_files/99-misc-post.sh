@@ -40,3 +40,8 @@ stat /usr/bin/luks*tpm*
 stat /usr/bin/uupd
 stat /usr/lib/systemd/system/uupd.service
 stat /usr/lib/systemd/system/uupd.timer
+
+# Symlinks.
+rm -rfv /opt /usr/local
+ln -s /var/usrlocal /usr/local
+ln -s /var/opt /
