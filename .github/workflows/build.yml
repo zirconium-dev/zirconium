@@ -71,11 +71,17 @@ jobs:
       # pull older update so rechunker can use it as baseline
       # this step is skipped whenever we need a fresh rechunk plan
       # (useful for new fedora release every now and then)
+      # TODO: swap to --previous-build when fedora repos gets
+      # rpm-ostree 2026.2 on the next step
       - name: Pull Older Image
         env:
           PLATFORM: ${{ matrix.platform }}
         if: inputs.fresh-rechunk != true
-        run: sudo podman pull ${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}-${PLATFORM}
+        run: |
+          # skip anyway on the first day of every month
+          if [ $(date -u +%d) -ne "01" ]; then
+            sudo podman pull ${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}-${PLATFORM}
+          fi
 
       # TODO: switch from centos bootc back to reusing local image
       # when fedora repos gets rpm-ostree 2026.1 or newer
