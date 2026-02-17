@@ -1,7 +1,7 @@
 # Zirconium
 ***Do you like how I dance? I've got Zirconium pants!***
 
-<img width="2140" height="1332" alt="image" src="https://github.com/user-attachments/assets/63603c6e-df6c-4869-8d02-489b7631b46d" />
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/73e4e017-893b-46fc-b6ce-351c176d444c" />
 
 ## What is Zirconium?
 Zirconium is an opinionated fedora-bootc image that makes use of Niri and DankMaterialShell to create a usable out of the box TWM experience.
