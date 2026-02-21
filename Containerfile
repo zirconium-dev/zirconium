@@ -1,6 +1,8 @@
 ARG BUILD_FLAVOR="${BUILD_FLAVOR:-}"
 
-FROM scratch AS ctx
+FROM docker.io/curlimages/curl:latest AS ctx
+
+USER root
 
 COPY assets /assets
 COPY build_files /build
@@ -9,6 +11,12 @@ COPY cosign.pub /files/usr/share/pki/containers/zirconium.pub
 COPY --from=ghcr.io/projectbluefin/common:latest /system_files/shared/usr/bin/luks* /files/usr/bin
 COPY --from=ghcr.io/projectbluefin/common:latest /system_files/shared/usr/share/ublue-os/just /files/usr/share/ublue-os/just
 COPY --from=ghcr.io/ublue-os/brew:latest /system_files /files
+
+RUN curl -fsSLo /FedoraWorkstation.xml \
+    "https://src.fedoraproject.org/rpms/firewalld/raw/rawhide/f/FedoraWorkstation.xml"
+
+RUN curl -fsSLo /zram-generator.conf \
+    "https://src.fedoraproject.org/rpms/zram-generator/raw/rawhide/f/zram-generator.conf"
 
 FROM quay.io/centos-bootc/centos-bootc:stream10
 ARG BUILD_FLAVOR="${BUILD_FLAVOR:-}"
@@ -90,8 +98,6 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --network=none \
     /ctx/build/99-dracut.sh
 
-RUN usermod -p "$(echo "changeme" | mkpasswd -s)" root
-
 RUN rm -rf /var/* && mkdir /var/tmp && bootc container lint
 
 # ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠛⠀⠙⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
@@ -118,7 +124,7 @@ RUN rm -rf /var/* && mkdir /var/tmp && bootc container lint
 # ⣿⣿⣿⣿⣿⣿⣿⡏⠛⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡘⡻⣿⣿
 # ⣿⣿⣿⣿⣿⡏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⢨⡛⡛⣁⣿
 # ⣿⣿⣿⣿⡿⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠂⠀⠀⠀⠀⠀⠀⠀⠀⣠⣿⣿⣿
-# ⣿⣿⣿⣿⠇⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣤⣄⣠⣴⣾⣿⣿⣿⣿
+# ⣿⣿⣿⣿⠇⠁⠀⠀⠀⠀⠀⠀⠀⠀LTS 4 life  ⠀⠀⠀⠀⠀⠀⣤⣄⣠⣴⣾⣿⣿⣿⣿
 # ⣿⣿⣿⠏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿
 # ⣿⣿⡿⠋⠠⣾⡇⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿
 # ⡟⢁⣠⣤⣦⣌⡃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⣿⣿⣿⣿⣿
