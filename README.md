@@ -3,7 +3,8 @@
 
 Based on Centos 10 with Zirconium things
 
-<img width="2140" height="1332" alt="image" src="https://github.com/user-attachments/assets/63603c6e-df6c-4869-8d02-489b7631b46d" />
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/9a007d51-524e-4af8-a9b7-5d2cfb6bedaf" />
+
 
 ## What is Zirconium?
 Zirconium is an opinionated fedora-bootc image that makes use of Niri and DankMaterialShell to create a usable out of the box TWM experience.
