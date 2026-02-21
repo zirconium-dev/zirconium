@@ -8,13 +8,10 @@ set -xeuo pipefail
 
 KERNEL_VERSION="$(find "/usr/lib/modules" -maxdepth 1 -type d ! -path "/usr/lib/modules" -exec basename '{}' ';' | sort | tail -n 1)"
 
-mkdir -p /var/tmp # for akmods
-mkdir -p /var/log/akmods
-mkdir -p /run/akmods
-chmod 1777 /var/tmp
-akmods --force --kernels "${KERNEL_VERSION}" --kmod "nvidia"
+NVIDIA_VERSION="$(basename "$(find /usr/src -iname "*nvidia-*" -type d -maxdepth 1)" | cut -d- -f2)"
+dkms install -m "nvidia/$NVIDIA_VERSION" -k "${KERNEL_VERSION}"
 find /usr/lib/modules -iname "nvidia*.ko*"
-stat "/usr/lib/modules/${KERNEL_VERSION}"/extra/nvidia/nvidia*.ko* # We actually need the kernel objects after build LOL
+stat "/usr/lib/modules/${KERNEL_VERSION}"/extra/nvidia*.ko* # We actually need the kernel objects after build LOL
 
 tee /usr/lib/modprobe.d/00-nouveau-blacklist.conf <<'EOF'
 blacklist nouveau
@@ -48,7 +45,3 @@ WantedBy=multi-user.target
 EOF
 
 systemctl enable nvctk-cdi.service
-systemctl disable akmods-keygen@akmods-keygen.service
-systemctl mask akmods-keygen@akmods-keygen.service
-systemctl disable akmods-keygen.target
-systemctl mask akmods-keygen.target
