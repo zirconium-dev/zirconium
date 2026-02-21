@@ -10,7 +10,7 @@ COPY --from=ghcr.io/projectbluefin/common:latest /system_files/shared/usr/bin/lu
 COPY --from=ghcr.io/projectbluefin/common:latest /system_files/shared/usr/share/ublue-os/just /files/usr/share/ublue-os/just
 COPY --from=ghcr.io/ublue-os/brew:latest /system_files /files
 
-FROM quay.io/fedora/fedora-bootc:43
+FROM quay.io/centos-bootc/centos-bootc:stream10
 ARG BUILD_FLAVOR="${BUILD_FLAVOR:-}"
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
@@ -53,21 +53,21 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --network=none \
     /ctx/build/01-theme-post.sh
 
-RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
-    --mount=type=tmpfs,dst=/var \
-    --mount=type=tmpfs,dst=/tmp \
-    --mount=type=tmpfs,dst=/run \
-    --mount=type=tmpfs,dst=/boot \
-    --mount=type=cache,dst=/var/cache/libdnf5 \
-    /ctx/build/02-nvidia-fetch.sh
+# RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+#     --mount=type=tmpfs,dst=/var \
+#     --mount=type=tmpfs,dst=/tmp \
+#     --mount=type=tmpfs,dst=/run \
+#     --mount=type=tmpfs,dst=/boot \
+#     --mount=type=cache,dst=/var/cache/libdnf5 \
+#     /ctx/build/02-nvidia-fetch.sh
 
-RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
-    --mount=type=tmpfs,dst=/var \
-    --mount=type=tmpfs,dst=/tmp \
-    --mount=type=tmpfs,dst=/run \
-    --mount=type=tmpfs,dst=/boot \
-    --network=none \
-    /ctx/build/02-nvidia-post.sh
+# RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+#     --mount=type=tmpfs,dst=/var \
+#     --mount=type=tmpfs,dst=/tmp \
+#     --mount=type=tmpfs,dst=/run \
+#     --mount=type=tmpfs,dst=/boot \
+#     --network=none \
+#     /ctx/build/02-nvidia-post.sh
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/var \
@@ -90,7 +90,7 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --network=none \
     /ctx/build/99-dracut.sh
 
-# RUN usermod -p "$(echo "changeme" | mkpasswd -s)" root
+RUN usermod -p "$(echo "changeme" | mkpasswd -s)" root
 
 RUN rm -rf /var/* && mkdir /var/tmp && bootc container lint
 

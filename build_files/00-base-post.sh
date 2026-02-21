@@ -18,5 +18,5 @@ systemctl preset firewalld.service
 systemctl preset flatpak-preinstall.service
 systemctl preset systemd-resolved.service
 systemctl preset systemd-resolved.service
-systemctl preset systemd-timesyncd.service
+# systemctl preset systemd-timesyncd.service
 systemctl preset uupd.timer

@@ -2,10 +2,7 @@
 
 set -xeuo pipefail
 
-dnf -y install 'dnf5-command(config-manager)'
-
-dnf config-manager setopt keepcache=1
-trap 'dnf config-manager setopt keepcache=0' EXIT
+dnf install -y epel-release && dnf update -y
 
 # These were manually picked out from a Bluefin comparison with `rpm -qa --qf="%{NAME}\n" `
 dnf -y install \
@@ -13,14 +10,6 @@ dnf -y install \
   NetworkManager \
   NetworkManager-adsl \
   NetworkManager-bluetooth \
-  NetworkManager-config-connectivity-fedora \
-  NetworkManager-libnm \
-  NetworkManager-openconnect \
-  NetworkManager-openvpn \
-  NetworkManager-strongswan \
-  NetworkManager-ssh \
-  NetworkManager-ssh-selinux \
-  NetworkManager-vpnc \
   NetworkManager-wifi \
   NetworkManager-wwan \
   alsa-firmware \
@@ -41,9 +30,7 @@ dnf -y install \
   fuse-common \
   fwupd \
   gum \
-  gvfs-archive \
   gvfs-mtp \
-  gvfs-nfs \
   gvfs-smb \
   hplip \
   hyperv-daemons \
@@ -53,12 +40,10 @@ dnf -y install \
   iwlegacy-firmware \
   iwlwifi-dvm-firmware \
   iwlwifi-mvm-firmware \
-  jmtpfs \
   kernel-modules-extra \
   libcamera{,-{v4l2,gstreamer,tools}} \
   libimobiledevice \
   libimobiledevice-utils \
-  libratbag-ratbagd \
   man-db \
   man-pages \
   mobile-broadband-provider-info \
@@ -72,7 +57,6 @@ dnf -y install \
   plymouth \
   plymouth-system-theme \
   printer-driver-brlaser \
-  ptouch-driver \
   qemu-guest-agent \
   realtek-firmware \
   rsync \
@@ -87,12 +71,28 @@ dnf -y install \
   tuned \
   tuned-ppd \
   unzip \
-  usb_modeswitch \
-  uxplay \
-  vpnc \
   whois \
-  wireguard-tools \
-  zram-generator-defaults
+  wireguard-tools
+
+
+  # WALL OF UNAVAILABLE
+  # NetworkManager-config-connectivity-fedora \
+  # NetworkManager-libnm \
+  # NetworkManager-openconnect \
+  # NetworkManager-openvpn \
+  # NetworkManager-strongswan \
+  # NetworkManager-ssh \
+  # NetworkManager-ssh-selinux \
+  # NetworkManager-vpnc \
+  # usb_modeswitch \
+  #  uxplay \
+  # vpnc \
+  # zram-generator-defaults
+  # ptouch-driver \
+  # libratbag-ratbagd \
+  # jmtpfs \
+  # gvfs-nfs \
+  # gvfs-archive \
 
 dnf -y copr enable ublue-os/packages
 dnf -y copr disable ublue-os/packages
@@ -107,17 +107,17 @@ if [ "$(rpm -E "%{fedora}")" == 43 ] ; then
   rpm -q flatpak --qf "%{NAME} %{VENDOR}\n" | grep ublue-os
 fi
 
-if [ "$(arch)" != "aarch64" ] ; then
-  dnf install -y \
-    virtualbox-guest-additions \
-    thermald \
-    powerstat
-fi
+# if [ "$(arch)" != "aarch64" ] ; then
+#   dnf install -y \
+#     virtualbox-guest-additions \
+#     thermald \
+#     powerstat
+# fi
 
 # THIS IS SO ANNOYING
 # It just fails for whatever damn reason, other stuff is going to lock it if it actually fails
-yes | dnf -y install --nogpgcheck --repofrompath 'terra,https://repos.fyralabs.com/terra$releasever' terra-release{,-extras,-mesa} || :
-dnf config-manager setopt terra.enabled=0
-dnf config-manager setopt terra-extras.enabled=0
-dnf config-manager setopt terra-mesa.enabled=0
+# yes | dnf -y install --nogpgcheck --repofrompath 'terra,https://repos.fyralabs.com/terra$releasever' terra-release{,-extras,-mesa} || :
+# dnf config-manager setopt terra.enabled=0
+# dnf config-manager setopt terra-extras.enabled=0
+# dnf config-manager setopt terra-mesa.enabled=0
 

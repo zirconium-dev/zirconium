@@ -43,6 +43,11 @@ disk-image $filesystem=filesystem:
     fi
     just bootc install to-disk --via-loopback /data/bootable.img --filesystem "${filesystem}" --wipe
 
+build:
+    #!/usr/bin/env bash
+    set -xeuo pipefail
+    podman build --dns=1.1.1.1 -t zirconium:latest .
+
 quick-iterate:
     #!/usr/bin/env bash
     set -xeuo pipefail

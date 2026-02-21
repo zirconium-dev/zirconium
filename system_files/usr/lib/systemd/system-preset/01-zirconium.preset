@@ -5,6 +5,4 @@ enable firewalld.service
 enable flatpak-preinstall.service
 enable greetd.service
 enable systemd-resolved.service
-enable systemd-timesyncd.service
-enable tailscaled.service
 enable uupd.timer
