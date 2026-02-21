@@ -72,20 +72,21 @@ dnf -y install \
   tuned-ppd \
   unzip \
   whois \
-  wireguard-tools
+  wireguard-tools \
+  NetworkManager-openconnect \
+  NetworkManager-openvpn \
+  NetworkManager-libnm
+
 
 
   # WALL OF UNAVAILABLE
   # NetworkManager-config-connectivity-fedora \
-  # NetworkManager-libnm \
-  # NetworkManager-openconnect \
-  # NetworkManager-openvpn \
   # NetworkManager-strongswan \
   # NetworkManager-ssh \
   # NetworkManager-ssh-selinux \
   # NetworkManager-vpnc \
   # usb_modeswitch \
-  #  uxplay \
+  # uxplay \
   # vpnc \
   # zram-generator-defaults
   # ptouch-driver \
