@@ -23,6 +23,12 @@
             "format": "{pretty-name}"
         },
         {
+            "type": "command",
+            "key": " ",
+            "text": "echo Based on $(sed 's/release //;s/ ([^)]*)//' /etc/system-release)",
+            "shell": "/bin/bash"
+        },
+        {
             "type": "kernel",
             "key": " ",
             "format": "{1} {2}"
