@@ -41,6 +41,7 @@ dnf -y install \
     foot \
     fpaste \
     fzf \
+    gcr \
     git-core \
     glycin-thumbnailer \
     gnome-disk-utility \

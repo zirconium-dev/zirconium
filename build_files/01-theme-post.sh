@@ -25,6 +25,8 @@ systemctl preset --global foot-server.service
 systemctl preset --global foot-server.socket
 systemctl preset --global gnome-keyring-daemon.service
 systemctl preset --global gnome-keyring-daemon.socket
+systemctl preset --global gcr-ssh-agent.service
+systemctl preset --global gcr-ssh-agent.socket
 systemctl preset --global iio-niri.service
 systemctl preset --global udiskie.service
 
