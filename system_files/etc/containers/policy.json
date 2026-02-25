@@ -25,7 +25,8 @@
                     "type": "sigstoreSigned",
                     "keyPaths": [
                         "/usr/share/pki/containers/zirconium.pub",
-                        "/usr/share/pki/containers/jackrabbit.pub"
+                        "/usr/share/pki/containers/jackrabbit.pub",
+                        "/usr/share/pki/containers/hawaii.pub"
                     ],
                     "signedIdentity": {
                         "type": "matchRepository"
