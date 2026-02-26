@@ -12,6 +12,11 @@ on:
     paths-ignore:
       - "**/README.md"
   workflow_dispatch:
+    inputs:
+      fresh-rechunk:
+        description: "Clear rechunk history"
+        type: boolean
+        default: false
 
 env:
   IMAGE_DESC: "Opinionated niri + bootc image"
@@ -63,8 +68,28 @@ jobs:
           BUILD_FLAVOR: ${{ matrix.flavor }}
         run: sudo podman build "--build-arg=BUILD_FLAVOR=${BUILD_FLAVOR}" -t "${IMAGE_NAME}:${DEFAULT_TAG}" -f ./Containerfile .
 
+      # pull older update so rechunker can use it as baseline
+      # this step is skipped whenever we need a fresh rechunk plan
+      # (useful for new fedora release every now and then)
+      # TODO: swap to --previous-build when fedora repos gets
+      # rpm-ostree 2026.2 on the next step
+      - name: Pull Older Image
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        if: inputs.fresh-rechunk != true
+        run: |
+          # skip anyway on the first day of every month
+          if [ $(date -u +%d) -ne "01" ]; then
+            sudo podman pull ${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}-${PLATFORM}
+          fi
+
+      # TODO: switch from centos bootc back to reusing local image
+      # when fedora repos gets rpm-ostree 2026.1 or newer
+      # upstream issue: https://github.com/bootc-dev/bootc/issues/1885
       - name: Rechunk Image
-        run: sudo podman run --rm --privileged -v /var/lib/containers:/var/lib/containers --entrypoint /usr/libexec/bootc-base-imagectl "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" rechunk --max-layers 67 "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" "localhost/${IMAGE_NAME}:${DEFAULT_TAG}"
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: sudo podman run --rm --privileged -v /var/lib/containers:/var/lib/containers --entrypoint /usr/libexec/bootc-base-imagectl "quay.io/centos-bootc/centos-bootc:stream10" rechunk --max-layers 67 "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}-${PLATFORM}"
 
       # TODO: remove me when we have a new podman in 26.04 runners
       # needed because old podman doesn't push layer annotations for
@@ -97,12 +122,12 @@ jobs:
           # HACK: push a second time so layer annotations are present
           # TODO: remove me when https://github.com/containers/podman/issues/27796 fixed
           for i in $(seq "${MAX_RETRIES}"); do
-            sudo /home/linuxbrew/.linuxbrew/bin/podman push --digestfile=/tmp/digestfile "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}-${PLATFORM}" && break || sleep $((5 * i));
+            sudo /home/linuxbrew/.linuxbrew/bin/podman push --digestfile=/tmp/digestfile "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}-${PLATFORM}" "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}-${PLATFORM}" && break || sleep $((5 * i));
           done
           echo "remote_image_digest=$(< /tmp/digestfile)" | tee "${GITHUB_OUTPUT}"
 
           for i in $(seq "${MAX_RETRIES}"); do
-            sudo /home/linuxbrew/.linuxbrew/bin/podman push --digestfile=/tmp/digestfile "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}-${PLATFORM}" && break || sleep $((5 * i));
+            sudo /home/linuxbrew/.linuxbrew/bin/podman push --digestfile=/tmp/digestfile "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}-${PLATFORM}" "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}-${PLATFORM}" && break || sleep $((5 * i));
           done
           echo "remote_image_digest=$(< /tmp/digestfile)" | tee "${GITHUB_OUTPUT}"
 
