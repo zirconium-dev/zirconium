@@ -12,7 +12,7 @@ sed -i 's|^HOME=.*|HOME=/var/home|' "/etc/default/useradd"
 
 rm -rf /home /root /usr/local /srv /opt /mnt /usr/local
 mkdir -p /sysroot /boot /var
-mkdir -p sysroot/ostree
+mkdir -p /sysroot/ostree
 ln -s sysroot/ostree /ostree
 ln -sT var/home /home
 ln -sT var/mnt /mnt
@@ -21,6 +21,7 @@ ln -sT var/roothome /root
 ln -sT var/srv /srv
 ln -sT ../../var/usrlocal /usr/local
 
+systemctl enable rechunker-group-fix.service
 
 # fedora-bootc/minimal/basic-fixes.yaml
 
