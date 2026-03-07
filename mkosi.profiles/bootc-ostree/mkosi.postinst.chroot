@@ -1,0 +1,46 @@
+#!/bin/bash
+set -xeuo pipefail
+
+KERNEL_PATH="$(find /usr/lib/modules -maxdepth 1 -type d | grep -v -E "*.img" | tail -n 1)"
+dracut --force "${KERNEL_PATH}/initramfs.img" --kver "$(basename "${KERNEL_PATH}")"
+
+mv /boot /usr/lib/ostree-boot
+bootupctl backend generate-update-metadata
+
+# Necessary for general behavior expected by image-based systems
+sed -i 's|^HOME=.*|HOME=/var/home|' "/etc/default/useradd"
+
+rm -rf /home /root /usr/local /srv /opt /mnt /usr/local
+mkdir -p /sysroot /boot /var
+mkdir -p sysroot/ostree
+ln -s sysroot/ostree /ostree
+ln -sT var/home /home
+ln -sT var/mnt /mnt
+ln -sT var/opt /opt
+ln -sT var/roothome /root
+ln -sT var/srv /srv
+ln -sT ../../var/usrlocal /usr/local
+
+
+# fedora-bootc/minimal/basic-fixes.yaml
+
+mkdir -p /usr/lib/systemd/system/local-fs.target.wants
+if test '!' -f /usr/lib/systemd/system/local-fs.target.wants/tmp.mount; then
+  ln -sf ../tmp.mount /usr/lib/systemd/system/local-fs.target.wants
+fi
+
+# See https://github.com/containers/bootc/issues/358
+# basically systemd-tmpfiles doesn't follow symlinks; ordinarily our
+# tmpfiles.d unit for `/var/roothome` is fine, but this actually doesn't
+# work if we want to use tmpfiles.d to write to `/root/.ssh` because
+# tmpfiles gives up on that before getting to `/var/roothome`.
+#
+# Redirect stdout to /dev/null because of some weird stdout issue
+# with newer rpm-ostree: https://github.com/coreos/rpm-ostree/pull/5388#issuecomment-2971623787
+sed -i -e 's, /root, /var/roothome,' /usr/lib/tmpfiles.d/provision.conf > /dev/null
+# Because /var/roothome is also defined in rpm-ostree-0-integration.conf
+# we need to delete /var/roothome
+#
+# Redirect stdout to /dev/null because of some weird stdout issue
+# with newer rpm-ostree: https://github.com/coreos/rpm-ostree/pull/5388#issuecomment-2971623787
+sed -i -e '/^d- \/var\/roothome /d' /usr/lib/tmpfiles.d/provision.conf > /dev/null

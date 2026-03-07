@@ -1,0 +1,7 @@
+#!/bin/bash
+set -xeuo pipefail
+
+RPM_MUT_DB="/usr/lib/sysimage/rpm"
+RPM_OSTREE_DB="/usr/share/rpm"
+mkdir -p "$RPM_OSTREE_DB"
+rsync -av "$RPM_MUT_DB/" "$RPM_OSTREE_DB/" 1>&2 2>/dev/null

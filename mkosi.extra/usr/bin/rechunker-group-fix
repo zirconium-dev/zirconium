@@ -16,3 +16,4 @@ for f in $(cat $GROUP_FILE); do
      echo $(cut -f1 -d':' <(echo $f)):'!*::' >> $GSHADOW_FILE
 done
 
+touch /etc/.rechunker-fix

@@ -1,0 +1,5 @@
+enable bootloader-update.service
+
+# Disable dnf-makecache.timer on bootc/image mode systems
+# https://github.com/coreos/fedora-coreos-tracker/issues/1896#issuecomment-2848251507
+disable dnf-makecache.timer

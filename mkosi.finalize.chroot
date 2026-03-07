@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -xeuo pipefail
+
+HOME_URL="https://github.com/tulilirockz/taxifolia"
+echo "taxifolia" | tee "/etc/hostname"
+sed -i -f - /usr/lib/os-release <<EOF
+s|^NAME=.*|NAME=\"Taxifolia\"|
+s|^PRETTY_NAME=.*|PRETTY_NAME=\"Taxifolia"|
+s|^VARIANT_ID=.*|VARIANT_ID=""|
+s|^HOME_URL=.*|HOME_URL=\"${HOME_URL}\"|
+s|^BUG_REPORT_URL=.*|BUG_REPORT_URL=\"${HOME_URL}/issues\"|
+s|^SUPPORT_URL=.*|SUPPORT_URL=\"${HOME_URL}/issues\"|
+s|^CPE_NAME=\".*\"|CPE_NAME=\"cpe:tulilirockz:taxifolia\"|
+s|^DOCUMENTATION_URL=.*|DOCUMENTATION_URL=\"${HOME_URL}\"|
+s|^DEFAULT_HOSTNAME=.*|DEFAULT_HOSTNAME="taxifolia"|
+
+/^REDHAT_BUGZILLA_PRODUCT=/d
+/^REDHAT_BUGZILLA_PRODUCT_VERSION=/d
+/^REDHAT_SUPPORT_PRODUCT=/d
+/^REDHAT_SUPPORT_PRODUCT_VERSION=/d
+EOF
+
+systemctl --global preset podman-auto-update.timer
+systemctl preset auditd.service
+systemctl preset bootc-fetch-apply-updates.service
+systemctl preset firewalld.service
+systemctl preset podman-auto-update.timer
+systemctl preset sshd.service
+systemctl preset systemd-networkd.service
+systemctl preset systemd-timesyncd.service
