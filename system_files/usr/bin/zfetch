@@ -1,2 +1,7 @@
 #!/usr/bin/env bash
-hyfetch --ascii-file=/usr/share/zirconium/zirconium.txt "${@}"
+
+if (( RANDOM % 67 )); then
+  hyfetch --ascii-file=/usr/share/zirconium/zirconium.txt "${@}"
+else
+  hyfetch --ascii-file=/usr/share/zirconium/labubu.txt "${@}"
+fi
