@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+set -xeuo pipefail
+
+niri --version | grep -i -E "niri [[:digit:]]*\.[[:digit:]]* (.*\.git\..*)"

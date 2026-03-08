@@ -1,0 +1,21 @@
+[copr:copr.fedorainfracloud.org:avengemedia:dms-git]
+name=Copr repo for dms-git owned by avengemedia
+baseurl=https://download.copr.fedorainfracloud.org/results/avengemedia/dms-git/fedora-$releasever-$basearch/
+type=rpm-md
+skip_if_unavailable=True
+gpgcheck=1
+gpgkey=https://download.copr.fedorainfracloud.org/results/avengemedia/dms-git/pubkey.gpg
+repo_gpgcheck=0
+enabled=0
+enabled_metadata=1
+
+[coprdep:copr.fedorainfracloud.org:avengemedia:danklinux]
+name=Copr copr.fedorainfracloud.org/avengemedia/dms-git runtime dependency #1 - avengemedia/danklinux
+baseurl=https://download.copr.fedorainfracloud.org/results/avengemedia/danklinux/fedora-$releasever-$basearch/
+type=rpm-md
+skip_if_unavailable=True
+gpgcheck=1
+gpgkey=https://download.copr.fedorainfracloud.org/results/avengemedia/danklinux/pubkey.gpg
+repo_gpgcheck=0
+enabled=0
+enabled_metadata=1

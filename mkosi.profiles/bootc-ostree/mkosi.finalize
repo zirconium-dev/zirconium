@@ -2,4 +2,3 @@
 set -xeuo pipefail
 
 rm -rf "$BUILDROOT/usr/etc" # ostree hates this :)
-rm -rf "$BUILDROOT/usr/share/doc/just"

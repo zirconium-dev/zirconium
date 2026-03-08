@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+set -xeuo pipefail
+
+rm -rf "$BUILDROOT/usr/share/doc/just"
+rm -rf "$BUILDROOT/usr/share/doc/niri"
+

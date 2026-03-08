@@ -4,3 +4,6 @@
 [submodule "zdots"]
 	path = zdots
 	url = https://github.com/zirconium-dev/zdots.git
+[submodule "mkosi.extra/usr/share/zirconium/zdots"]
+	path = mkosi.extra/usr/share/zirconium/zdots
+	url = https://github.com/zirconium-dev/zdots.git
