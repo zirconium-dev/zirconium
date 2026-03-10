@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+set -xeuo pipefail
+
+NVIDIA_VERSION="$(basename "$(find /usr/src -iname "*nvidia-*" -type d -maxdepth 1)" | cut -d- -f2)"
+KERNEL_VERSION="$(find "/usr/lib/modules" -maxdepth 1 -type d ! -path "/usr/lib/modules" -exec basename '{}' ';' | sort | tail -n 1)"
+# we need to override the `OUTPUTDIR` environment variable due to it being set by mkosi
+OUTPUTDIR=out dkms install -m "nvidia/$NVIDIA_VERSION" -k "${KERNEL_VERSION}"
+find /usr/lib/modules -iname "nvidia*.ko*"
+stat "/usr/lib/modules/${KERNEL_VERSION}"/extra/nvidia*.ko* # We actually need the kernel objects after build LOL
+
+systemctl enable nvctk-cdi.service
+systemctl disable akmods-keygen@akmods-keygen.service
+systemctl mask akmods-keygen@akmods-keygen.service
+systemctl disable akmods-keygen.target
+systemctl mask akmods-keygen.target
+
+mv /etc/modprobe.d/nvidia-modeset.conf /usr/lib/modprobe.d/nvidia-modeset.conf
+
+# we must force driver load to fix black screen on boot for nvidia desktops
+sed -i 's/omit_drivers/force_drivers/g' /usr/lib/dracut/dracut.conf.d/99-nvidia.conf
+# as we need forced load, also must pre-load intel/amd iGPU else chromium web browsers fail to use hardware acceleration
+sed -i 's/ nvidia / i915 amdgpu nvidia /g' /usr/lib/dracut/dracut.conf.d/99-nvidia.conf

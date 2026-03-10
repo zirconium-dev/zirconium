@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+set -xeuo pipefail
+
+rpm -i "$SRCDIR/cache/*dkms-nvidia*$(arch)*.rpm" --noscripts --nodeps
+
+NVIDIA_VERSION="$(basename "$(find /usr/src -iname "*nvidia-*" -type d -maxdepth 1)" | cut -d- -f2)"
+if [ "${NVIDIA_VERSION}" == "590.48.01" ] ; then
+  cd "/usr/src/nvidia-$NVIDIA_VERSION"
+  cp $SRCDIR/cache/cachy.patch .
+  git apply --stat cachy.patch
+  git apply --check cachy.patch
+  git apply < cachy.patch
+  rm cachy.patch
+  cd /
+fi

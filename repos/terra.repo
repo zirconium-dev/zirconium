@@ -7,7 +7,7 @@ type=rpm
 gpgcheck=0
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-terra$releasever
 repo_gpgcheck=0
-enabled=1
+enabled=0
 enabled_metadata=1
 countme=1
 
@@ -20,5 +20,5 @@ type=rpm
 gpgcheck=0
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-terra$releasever-source
 repo_gpgcheck=1
-enabled=1
+enabled=0
 enabled_metadata=0
