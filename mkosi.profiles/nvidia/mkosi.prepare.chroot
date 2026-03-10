@@ -2,15 +2,11 @@
 
 set -xeuo pipefail
 
-rpm -i "$SRCDIR/cache/*dkms-nvidia*$(arch)*.rpm" --noscripts --nodeps
+mkdir -p "${SRCDIR}/cache"
+pushd "${SRCDIR}/cache"
+dnf download dkms-nvidia --repo=terra-nvidia "--arch=$(arch)" "--destdir=${SRCDIR}/cache"
+popd
 
-NVIDIA_VERSION="$(basename "$(find /usr/src -iname "*nvidia-*" -type d -maxdepth 1)" | cut -d- -f2)"
-if [ "${NVIDIA_VERSION}" == "590.48.01" ] ; then
-  cd "/usr/src/nvidia-$NVIDIA_VERSION"
-  cp $SRCDIR/cache/cachy.patch .
-  git apply --stat cachy.patch
-  git apply --check cachy.patch
-  git apply < cachy.patch
-  rm cachy.patch
-  cd /
-fi
+# FIXME: remove once nvidia-open builds on 6.19 ootb https://github.com/NVIDIA/open-gpu-kernel-modules/issues/1021#issuecomment-3875691676
+curl -fsSLo "$SRCDIR/cache/cachy.patch" https://raw.githubusercontent.com/CachyOS/CachyOS-PKGBUILDS/refs/heads/master/nvidia/nvidia-utils/kernel-6.19.patch
+
