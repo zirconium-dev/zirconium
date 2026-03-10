@@ -15,18 +15,10 @@ if [ "${NVIDIA_VERSION}" == "590.48.01" ] ; then
   cd /
 fi
 
-NVIDIA_VERSION="$(basename "$(find /usr/src -iname "*nvidia-*" -type d -maxdepth 1)" | cut -d- -f2)"
-KERNEL_VERSION="$(find "/usr/lib/modules" -maxdepth 1 -type d ! -path "/usr/lib/modules" -exec basename '{}' ';' | sort | tail -n 1)"
 # we need to override the `OUTPUTDIR` environment variable due to it being set by mkosi
-OUTPUTDIR=out dkms install -m "nvidia/$NVIDIA_VERSION" -k "${KERNEL_VERSION}"
+OUTPUTDIR=out dkms install -m "nvidia/$NVIDIA_VERSION" -k "$(find "/usr/lib/modules" -maxdepth 1 -type d ! -path "/usr/lib/modules" -exec basename '{}' ';' | sort | tail -n 1)"
 find /usr/lib/modules -iname "nvidia*.ko*"
 stat "/usr/lib/modules/${KERNEL_VERSION}"/extra/nvidia*.ko* # We actually need the kernel objects after build LOL
-
-systemctl enable nvctk-cdi.service
-systemctl disable akmods-keygen@akmods-keygen.service
-systemctl mask akmods-keygen@akmods-keygen.service
-systemctl disable akmods-keygen.target
-systemctl mask akmods-keygen.target
 
 mv /etc/modprobe.d/nvidia-modeset.conf /usr/lib/modprobe.d/nvidia-modeset.conf
 

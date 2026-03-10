@@ -1,9 +1,6 @@
 #!/bin/bash
 set -xeuo pipefail
 
-# migration off of nss-altfiles
-systemctl enable rechunker-group-fix.service
-
 RPM_MUT_DB="/usr/lib/sysimage/rpm"
 RPM_OSTREE_DB="/usr/share/rpm"
 mkdir -p "$RPM_OSTREE_DB"

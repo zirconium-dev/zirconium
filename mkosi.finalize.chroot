@@ -40,8 +40,6 @@ EOF
 
 # GO AWAY fedora flatpaks.
 rm -rf /usr/lib/systemd/system/flatpak-add-fedora-repos.service
-systemctl enable flatpak-add-flathub-repos.service
-
 rm -rf /usr/bin/chsh # footgun
 
 # These files NEED to be on the image.

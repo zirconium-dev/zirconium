@@ -2,6 +2,7 @@ enable auditd.service
 enable bootc-fetch-apply-updates.timer
 enable brew-setup.service
 enable firewalld.service
+enable flatpak-add-flathub-repos.service
 enable flatpak-preinstall.service
 enable greetd.service
 enable systemd-resolved.service

@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-
-set -xeuo pipefail
-
-# mkdir -p "/usr/share/flatpak/remotes.d/"
-# curl --retry 3 -Lo "/usr/share/flatpak/remotes.d/flathub.flatpakrepo" "https://dl.flathub.org/repo/flathub.flatpakrepo"
-# grep -F -e "Central repository of Flatpak applications" "/usr/share/flatpak/remotes.d/flathub.flatpakrepo"
-
