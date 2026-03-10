@@ -4,7 +4,8 @@ set -xeuo pipefail
 
 mkdir -p "${SRCDIR}/cache"
 pushd "${SRCDIR}/cache"
-dnf download dkms-nvidia --repo=terra-nvidia "--arch=$(arch)" "--destdir=${SRCDIR}/cache"
+yes | dnf download dkms-nvidia --repo=terra-nvidia "--arch=$(arch)" "--destdir=${SRCDIR}/cache" || true
+find . -iname "dkms-nvidia*.rpm"
 popd
 
 # FIXME: remove once nvidia-open builds on 6.19 ootb https://github.com/NVIDIA/open-gpu-kernel-modules/issues/1021#issuecomment-3875691676
