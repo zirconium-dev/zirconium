@@ -24,7 +24,7 @@ jobs:
     uses: ./.github/workflows/reusable-build.yaml
     secrets: inherit
     with:
-      image-name: zirconium-nvidia
+      image-name: zirconium-mkosi-nvidia
       platforms: amd64,arm64
       profiles: nvidia
       rechunk: ${{ github.event_name != 'pull_request' }}

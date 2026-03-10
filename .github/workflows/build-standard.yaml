@@ -24,7 +24,8 @@ jobs:
     uses: ./.github/workflows/reusable-build.yaml
     secrets: inherit
     with:
-      image-name: zirconium
+      image-name: zirconium-mkosi
       platforms: amd64,arm64
       rechunk: ${{ github.event_name != 'pull_request' }}
-      publish: ${{ github.event_name != 'pull_request' }}
+      # publish: ${{ github.event_name != 'pull_request' }}
+      publish: true
