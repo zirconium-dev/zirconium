@@ -162,7 +162,7 @@ jobs:
           /home/linuxbrew/.linuxbrew/bin/brew install podman
 
       - name: Push to GHCR
-        if: inputs.publish && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        if: ${{ inputs.publish && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
         id: push
         env:
           IMAGE_REGISTRY: ${{ env.IMAGE_REGISTRY }}
@@ -195,6 +195,14 @@ jobs:
           COSIGN_EXPERIMENTAL: false
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
         run: cosign sign -y --new-bundle-format=false --use-signing-config=false --key env://COSIGN_PRIVATE_KEY "${IMAGE_REGISTRY}/${IMAGE_NAME}@${REMOTE_IMAGE_DIGEST}"
+
+      - name: Generate build provenance attestation
+        if: github.event_name != 'pull_request'
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
+        with:
+          subject-name: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.push.outputs.remote_image_digest }}
+          push-to-registry: true
 
       - name: Create Job Outputs
         if: ${{ inputs.publish && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
