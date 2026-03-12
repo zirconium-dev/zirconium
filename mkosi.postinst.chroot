@@ -1,13 +1,11 @@
 #!/bin/bash
 set -xeuo pipefail
 
-rm -rf /usr/share/doc/niri
-rm -rf /usr/share/doc/just
-
 # XDG_EXT_TMPDIR="$(mktemp -d)"
 # curl -fsSLo - "$(curl -fsSL https://api.github.com/repos/zirconium-dev/xdg-terminal-exec-nautilus/releases/latest | jq -rc .tarball_url)" | tar -xzvf - -C "${XDG_EXT_TMPDIR}"
 # install -Dpm0644 -t "/usr/share/nautilus-python/extensions/" "${XDG_EXT_TMPDIR}"/*/xdg-terminal-exec-nautilus.py
 # rm -rf "${XDG_EXT_TMPDIR}"
+install -Dpm0644 -t /usr/share/ "$SRCDIR/cache/homebrew.tar.zst"
 
 niri --version | grep -i -E "niri [[:digit:]]*\.[[:digit:]]* (.*\.git\..*)"
 
@@ -15,9 +13,6 @@ sed -i 's|^ExecStart=.*|ExecStart=/usr/bin/bootc update --quiet|' /usr/lib/syste
 
 install -d /usr/share/zirconium/
 install -Dpm0644 -t /usr/lib/pam.d/ /usr/share/quickshell/dms/assets/pam/* # Fixes long login times on fingerprint auth
-# we already have a service for handling fcitx5
-rm -f /usr/share/applications/fcitx5-wayland-launcher.desktop
-rm -f /usr/share/applications/org.fcitx.Fcitx5*.desktop
 sed --sandbox -i -e '/gnome_keyring.so/ s/-auth/auth/ ; /gnome_keyring.so/ s/-session/session/' /etc/pam.d/greetd
 echo 'source /usr/share/zirconium/shell/pure.bash' | tee -a "/etc/bashrc"
 install -d /usr/share/bash-completion/completions /usr/share/zsh/site-functions /usr/share/fish/vendor_completions.d/
@@ -27,10 +22,6 @@ just --completions fish | sed -E 's/([\(_" ])just/\1zjust/g' > /usr/share/fish/v
 
 fc-cache --force --really-force --system-only --verbose # recreate font-cache to pick up the added fonts
 
-# GO AWAY fedora flatpaks.
-rm -rf /usr/lib/systemd/system/flatpak-add-fedora-repos.service
-rm -rf /usr/bin/chsh # footgun
-
 # These files NEED to be on the image.
 grep -F -e "ghcr.io/zirconium-dev" /etc/containers/policy.json
 stat /usr/share/pki/containers/zirconium.pub
@@ -39,6 +30,9 @@ stat /usr/share/pki/containers/jackrabbit.pub
 stat /usr/bin/uupd
 stat /usr/lib/systemd/system/uupd.service
 stat /usr/lib/systemd/system/uupd.timer
+stat /usr/lib/systemd/system/brew-setup.service
+stat /usr/share/homebrew.tar.zst
+stat /usr/lib/tmpfiles.d/homebrew.conf
 
 HOME_URL="https://github.com/zirconium-dev/zirconium"
 echo "zirconium" | tee "/etc/hostname"

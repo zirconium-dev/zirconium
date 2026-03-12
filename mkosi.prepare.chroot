@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+set -xeuo pipefail
+
+mkdir -p "${SRCDIR}/cache"
+
+if [ ! -e "${SRCDIR}/cache/crane" ] ; then
+	CRANE_URL="$(curl -fsSL https://api.github.com/repos/google/go-containerregistry/releases/latest  | jq -rc --arg arch "$(arch)" '.assets[] | select(.name=="go-containerregistry_Linux_" + $arch + ".tar.gz") | .browser_download_url')"
+	curl -fsSLo /dev/stdout "${CRANE_URL}"	| tar -xvzf - -C "${SRCDIR}/cache" --owner=0 --group=0 --no-same-owner --no-same-permissions crane
+fi
+
+if [ ! -e "${SRCDIR}/cache/homebrew.tar.zst" ] ; then
+	"${SRCDIR}/cache/crane" export ghcr.io/ublue-os/brew:latest | tar -xvf - -C "${SRCDIR}/cache" system_files/usr/share/homebrew.tar.zst
+	mv "${SRCDIR}/cache/system_files/usr/share/homebrew.tar.zst" "${SRCDIR}/cache/homebrew.tar.zst"
+	rm -r "${SRCDIR}/cache/system_files"
+fi

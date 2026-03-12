@@ -4,3 +4,6 @@
 [submodule "mkosi.extra/usr/share/zirconium/zdots"]
 	path = mkosi.extra/usr/share/zirconium/zdots
 	url = https://github.com/zirconium-dev/zdots.git
+[submodule "subprojects/ublue-brew"]
+	path = subprojects/ublue-brew
+	url = https://github.com/ublue-os/brew

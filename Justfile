@@ -4,8 +4,9 @@ filesystem := env("BUILD_FILESYSTEM", "ext4")
 default:
     just build
     sudo just load
-    sudo just rechunk
+    sudo just ostree-rechunk
     sudo env BUILD_BASE_DIR=/tmp just disk-image
+    vmbuddy -f /tmp/bootable.img
 
 build:
     mkosi -B
