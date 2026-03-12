@@ -145,7 +145,7 @@ jobs:
           sudo chmod 777 --recursive mkosi.cache
 
       - name: Login to GitHub Container Registry
-        if: ${{ inputs.publish && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+        if: inputs.publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LOGIN_USER: ${{ github.actor }}
@@ -157,12 +157,12 @@ jobs:
       # needed because old podman doesn't push layer annotations for
       # the rpm-ostree rechunker at all
       - name: Install Podman from Brew
-        if: ${{ inputs.publish && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+        if: inputs.publish
         run: |
           /home/linuxbrew/.linuxbrew/bin/brew install podman
 
       - name: Push to GHCR
-        if: ${{ inputs.publish && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+        if: inputs.publish
         id: push
         env:
           IMAGE_REGISTRY: ${{ env.IMAGE_REGISTRY }}
@@ -186,10 +186,10 @@ jobs:
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@v4.0.0
-        if: ${{ inputs.publish }}
+        if: inputs.publish
 
       - name: Sign Image
-        if: ${{ inputs.publish && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+        if: inputs.publish
         env:
           REMOTE_IMAGE_DIGEST: ${{ steps.push.outputs.remote_image_digest }}
           COSIGN_EXPERIMENTAL: false
@@ -197,7 +197,7 @@ jobs:
         run: cosign sign -y --new-bundle-format=false --use-signing-config=false --key env://COSIGN_PRIVATE_KEY "${IMAGE_REGISTRY}/${IMAGE_NAME}@${REMOTE_IMAGE_DIGEST}"
 
       - name: Generate build provenance attestation
-        if: github.event_name != 'pull_request'
+        if: inputs.publish
         uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
         with:
           subject-name: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
@@ -205,7 +205,7 @@ jobs:
           push-to-registry: true
 
       - name: Create Job Outputs
-        if: ${{ inputs.publish && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+        if: inputs.publish
         env:
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
           PLATFORM: ${{ matrix.platform }}
@@ -216,7 +216,7 @@ jobs:
           echo "${DIGEST}" | tee "/tmp/outputs/digests/${IMAGE_NAME}-${PLATFORM}.txt"
 
       - name: Upload Output Artifacts
-        if: ${{ inputs.publish && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+        if: inputs.publish
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v5
         with:
           name: ${{ env.IMAGE_NAME }}-${{ matrix.platform }}
@@ -290,7 +290,7 @@ jobs:
             org.opencontainers.image.version=${{ env.DEFAULT_TAG }}.{{date 'YYYYMMDD'}}
 
       - name: Fetch Build Outputs
-        if: ${{ inputs.publish && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+        if: inputs.publish
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v6
         with:
           pattern: ${{ env.IMAGE_NAME }}-*
@@ -298,7 +298,7 @@ jobs:
           path: /tmp/artifacts
 
       - name: Load Outputs
-        if: ${{ inputs.publish && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+        if: inputs.publish
         shell: bash
         id: load-outputs
         run: |
@@ -314,7 +314,7 @@ jobs:
           echo "OUTPUT_CSV=$(base32 -w 0 < "${OUTCSV}")" | tee -a "${GITHUB_OUTPUT}"
 
       - name: Login to GitHub Container Registry
-        if: ${{ inputs.publish && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+        if: inputs.publish
         env:
           REGISTRY: ghcr.io
         run: |
@@ -327,7 +327,7 @@ jobs:
 
       - name: Publish manifest with unified architecture and sign
         shell: bash
-        if: ${{ inputs.publish && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+        if: inputs.publish
         env:
           COSIGN_EXPERIMENTAL: false
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
