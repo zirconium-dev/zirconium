@@ -26,7 +26,8 @@ fc-cache --force --really-force --system-only --verbose # recreate font-cache to
 grep -F -e "ghcr.io/zirconium-dev" /etc/containers/policy.json
 stat /usr/share/pki/containers/zirconium.pub
 stat /usr/share/pki/containers/jackrabbit.pub
-# stat /usr/bin/luks*tpm*
+stat /usr/bin/luks*tpm*
+stat /usr/share/ublue-os/just/update.just
 stat /usr/bin/uupd
 stat /usr/lib/systemd/system/uupd.service
 stat /usr/lib/systemd/system/uupd.timer
