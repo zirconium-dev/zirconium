@@ -136,7 +136,7 @@ jobs:
       - name: Rechunk image
         id: rechunk
         run: |
-          sudo env IMAGE_FULL="localhost/${IMAGE_NAME}:latest" $(which just) rechunk
+          sudo env IMAGE_FULL="localhost/${IMAGE_NAME}:latest" $(which just) ostree-rechunk
 
       # https://github.com/actions/cache/issues/1533
       - name: Hack around permission issue caching
