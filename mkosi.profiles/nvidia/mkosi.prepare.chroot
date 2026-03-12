@@ -9,7 +9,8 @@ find . -iname "dkms-nvidia*.rpm"
 popd
 
 # FIXME: remove once nvidia-open builds on 6.19 ootb https://github.com/NVIDIA/open-gpu-kernel-modules/issues/1021#issuecomment-3875691676
+# Change this when 595 releases in terra-nvidia
 if [ ! -e "$SRCDIR/cache/cachy.patch" ] ; then
-  curl -fsSLo "$SRCDIR/cache/cachy.patch" https://raw.githubusercontent.com/CachyOS/CachyOS-PKGBUILDS/refs/heads/master/nvidia/nvidia-utils/kernel-6.19.patch
+  curl -fsSLo "$SRCDIR/cache/cachy.patch" https://raw.githubusercontent.com/CachyOS/CachyOS-PKGBUILDS/11ad7403c83ac629d2defed322b827d3a3537691/nvidia/nvidia-utils/kernel-6.19.patch
 fi
 
