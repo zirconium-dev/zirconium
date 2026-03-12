@@ -1,13 +1,63 @@
 #!/bin/bash
 set -xeuo pipefail
 
-sed -i 's|^ExecStart=.*|ExecStart=/usr/bin/bootc update --quiet|' /usr/lib/systemd/system/bootc-fetch-apply-updates.service
-sed -i 's|^OnUnitInactiveSec=.*|OnUnitInactiveSec=7d\nPersistent=true|' /usr/lib/systemd/system/bootc-fetch-apply-updates.timer
-sed -i 's|#AutomaticUpdatePolicy.*|AutomaticUpdatePolicy=stage|' /etc/rpm-ostreed.conf
-sed -i 's|#LockLayering.*|LockLayering=true|' /etc/rpm-ostreed.conf
-sed -i 's|uupd|& --disable-module-distrobox|' /usr/lib/systemd/system/uupd.service
+rm -rf /usr/share/doc/niri
+rm -rf /usr/share/doc/just
 
-# For podman rootless
-chmod 0755 /usr/bin/newuidmap /usr/bin/newgidmap
-chmod u+s /usr/bin/newuidmap
-chmod u+s /usr/bin/newgidmap
+# XDG_EXT_TMPDIR="$(mktemp -d)"
+# curl -fsSLo - "$(curl -fsSL https://api.github.com/repos/zirconium-dev/xdg-terminal-exec-nautilus/releases/latest | jq -rc .tarball_url)" | tar -xzvf - -C "${XDG_EXT_TMPDIR}"
+# install -Dpm0644 -t "/usr/share/nautilus-python/extensions/" "${XDG_EXT_TMPDIR}"/*/xdg-terminal-exec-nautilus.py
+# rm -rf "${XDG_EXT_TMPDIR}"
+
+niri --version | grep -i -E "niri [[:digit:]]*\.[[:digit:]]* (.*\.git\..*)"
+
+sed -i 's|^ExecStart=.*|ExecStart=/usr/bin/bootc update --quiet|' /usr/lib/systemd/system/bootc-fetch-apply-updates.service
+
+install -d /usr/share/zirconium/
+install -Dpm0644 -t /usr/lib/pam.d/ /usr/share/quickshell/dms/assets/pam/* # Fixes long login times on fingerprint auth
+# we already have a service for handling fcitx5
+rm -f /usr/share/applications/fcitx5-wayland-launcher.desktop
+rm -f /usr/share/applications/org.fcitx.Fcitx5*.desktop
+sed --sandbox -i -e '/gnome_keyring.so/ s/-auth/auth/ ; /gnome_keyring.so/ s/-session/session/' /etc/pam.d/greetd
+echo 'source /usr/share/zirconium/shell/pure.bash' | tee -a "/etc/bashrc"
+install -d /usr/share/bash-completion/completions /usr/share/zsh/site-functions /usr/share/fish/vendor_completions.d/
+just --completions bash | sed -E 's/([\(_" ])just/\1zjust/g' > /usr/share/bash-completion/completions/zjust
+just --completions zsh | sed -E 's/([\(_" ])just/\1zjust/g' > /usr/share/zsh/site-functions/_zjust
+just --completions fish | sed -E 's/([\(_" ])just/\1zjust/g' > /usr/share/fish/vendor_completions.d/zjust.fish
+
+fc-cache --force --really-force --system-only --verbose # recreate font-cache to pick up the added fonts
+
+# GO AWAY fedora flatpaks.
+rm -rf /usr/lib/systemd/system/flatpak-add-fedora-repos.service
+rm -rf /usr/bin/chsh # footgun
+
+# These files NEED to be on the image.
+grep -F -e "ghcr.io/zirconium-dev" /etc/containers/policy.json
+stat /usr/share/pki/containers/zirconium.pub
+stat /usr/share/pki/containers/jackrabbit.pub
+# stat /usr/bin/luks*tpm*
+stat /usr/bin/uupd
+stat /usr/lib/systemd/system/uupd.service
+stat /usr/lib/systemd/system/uupd.timer
+
+HOME_URL="https://github.com/zirconium-dev/zirconium"
+echo "zirconium" | tee "/etc/hostname"
+# OS Release File (changed in order with upstream)
+# TODO: change ANSI_COLOR
+sed -i -f - /usr/lib/os-release <<EOF
+s|^NAME=.*|NAME=\"Zirconium\"|
+s|^PRETTY_NAME=.*|PRETTY_NAME=\"Zirconium\"|
+s|^VERSION_CODENAME=.*|VERSION_CODENAME=\"Juno\"|
+s|^VARIANT_ID=.*|VARIANT_ID=""|
+s|^HOME_URL=.*|HOME_URL=\"${HOME_URL}\"|
+s|^BUG_REPORT_URL=.*|BUG_REPORT_URL=\"${HOME_URL}/issues\"|
+s|^SUPPORT_URL=.*|SUPPORT_URL=\"${HOME_URL}/issues\"|
+s|^CPE_NAME=\".*\"|CPE_NAME=\"cpe:/o:zirconium-dev:zirconium\"|
+s|^DOCUMENTATION_URL=.*|DOCUMENTATION_URL=\"${HOME_URL}\"|
+s|^DEFAULT_HOSTNAME=.*|DEFAULT_HOSTNAME="zirconium"|
+
+/^REDHAT_BUGZILLA_PRODUCT=/d
+/^REDHAT_BUGZILLA_PRODUCT_VERSION=/d
+/^REDHAT_SUPPORT_PRODUCT=/d
+/^REDHAT_SUPPORT_PRODUCT_VERSION=/d
+EOF

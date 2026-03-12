@@ -15,5 +15,3 @@ for f in $(cat $GROUP_FILE); do
    cut -f1 -d':' <(echo $f) | xargs -I{} grep ^"{}" $GSHADOW_FILE &>/dev/null || \
      echo $(cut -f1 -d':' <(echo $f)):'!*::' >> $GSHADOW_FILE
 done
-
-touch /etc/.rechunker-fix

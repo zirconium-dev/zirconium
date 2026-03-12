@@ -1,7 +1,11 @@
 image := env("IMAGE_FULL", "localhost/zirconium:latest")
 filesystem := env("BUILD_FILESYSTEM", "ext4")
 
-default: build load ostree-rechunk
+default:
+    just build
+    sudo just load
+    sudo just rechunk
+    sudo env BUILD_BASE_DIR=/tmp just disk-image
 
 build:
     mkosi -B
@@ -9,7 +13,7 @@ build:
 load:
     #!/usr/bin/env bash
     set -x
-    sudo podman load -i "$(find mkosi.profiles/bootc-ostree/mkosi.output/* -maxdepth 0 -type d -printf "%T@ ,%p\n" -iname "_*" -print0 | sort -n | head -n1 | cut -d, -f2)" -q | cut -d: -f3 | xargs -I{} sudo podman tag {} {{image}}
+    podman load -i "$(find mkosi.profiles/bootc-ostree/mkosi.output/* -maxdepth 0 -type d -printf "%T@ ,%p\n" -iname "_*" -print0 | sort -n | head -n1 | cut -d, -f2)" -q | cut -d: -f3 | xargs -I{} podman tag {} {{image}}
 
 ostree-rechunk:
     #!/usr/bin/env bash
@@ -23,7 +27,7 @@ ostree-rechunk:
           "{{image}}" || exit 1
 
 bootc *ARGS:
-    sudo podman run \
+    podman run \
         --rm --privileged --pid=host \
         -it \
         -v /sys/fs/selinux:/sys/fs/selinux \
@@ -45,8 +49,14 @@ rechunk:
     #!/usr/bin/env bash
     IMG="{{ image }}"
     # podman pull $IMG # image must be available locally
-    export CHUNKAH_CONFIG_STR=$(sudo podman inspect $IMG)
-    sudo podman run --rm --mount=type=image,src=$IMG,dest=/chunkah -e CHUNKAH_CONFIG_STR quay.io/jlebon/chunkah build --label ostree.bootable=1 | sudo podman load
+    export CHUNKAH_CONFIG_STR="$(sudo podman inspect "${IMG}")"
+    podman run --rm "--mount=type=image,src=${IMG},dest=/chunkah" -e CHUNKAH_CONFIG_STR quay.io/jlebon/chunkah build --label ostree.bootable=1 --compressed --max-layers 67 | \
+        podman load | \
+        sort -n | \
+        head -n1 | \
+        cut -d, -f2 | \
+        cut -d: -f3 | \
+        xargs -I{} sudo podman tag {} {{image}}
 
 quick-iterate:
     just build
