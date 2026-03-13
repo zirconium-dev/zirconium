@@ -5,7 +5,7 @@ set -xeuo pipefail
 mkdir -p "${SRCDIR}/cache"
 
 if [ ! -e "${SRCDIR}/cache/crane" ] ; then
-	CRANE_URL="$(curl -fsSL https://api.github.com/repos/google/go-containerregistry/releases/latest  | jq -rc --arg arch "$(arch)" '.assets[] | select(.name=="go-containerregistry_Linux_" + $arch + ".tar.gz") | .browser_download_url')"
+	CRANE_URL="$(curl -fsSL https://api.github.com/repos/google/go-containerregistry/releases/latest  | jq -rc --arg arch "$(arch | sed "s/aarch/arm/")" '.assets[] | select(.name=="go-containerregistry_Linux_" + $arch + ".tar.gz") | .browser_download_url')"
 	curl -fsSLo /dev/stdout "${CRANE_URL}"	| tar -xvzf - -C "${SRCDIR}/cache" --owner=0 --group=0 --no-same-owner --no-same-permissions crane
 fi
 
