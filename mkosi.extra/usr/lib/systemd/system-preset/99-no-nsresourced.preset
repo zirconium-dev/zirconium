@@ -1,0 +1,2 @@
+# nsresourced does not work as of f44 due to selinux policies.
+disable systemd-nsresourced.socket
