@@ -83,6 +83,13 @@ jobs:
       matrix: ${{fromJson(needs.generate_matrix.outputs.matrix)}}
     runs-on: ${{ matrix.platform == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
     steps:
+      - name: Enable cache for brew
+        uses: actions/cache@v5
+        id: brew-cache
+        with:
+          path: /home/linuxbrew
+          key: brew-${{ matrix.platform }}
+
       - name: Mount BTRFS for podman storage
         if: matrix.platform != 'arm64' && inputs.cleanup_action
         uses: ublue-os/container-storage-action@911baca08baf30c8654933e9e9723cb399892140
@@ -157,7 +164,7 @@ jobs:
       # needed because old podman doesn't push layer annotations for
       # the rpm-ostree rechunker at all
       - name: Install Podman from Brew
-        if: inputs.publish
+        if: inputs.publish && steps.brew-cache.outputs.cache-hit != 'true'
         run: |
           /home/linuxbrew/.linuxbrew/bin/brew install podman
 
