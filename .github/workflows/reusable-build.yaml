@@ -287,7 +287,7 @@ jobs:
 
       - name: Fetch Build Outputs
         if: inputs.publish
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v6
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v6
         with:
           pattern: ${{ env.IMAGE_NAME }}-*
           merge-multiple: true
