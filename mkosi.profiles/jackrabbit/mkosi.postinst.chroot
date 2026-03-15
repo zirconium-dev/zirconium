@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+set -xeuo pipefail
+
+# ensuring the default kernel isn't being pulled in
+for pkg in kernel kernel-core kernel-modules kernel-modules-core kernel-modules-extra; do
+  rpm --erase $pkg --nodeps
+done
+
+rpm -qi mesa-filesystem | grep -F -e "Terra"
+rpm -qa | grep -v -E "^gamescope" &> /dev/null
+
+KERNEL_VERSION="$(find "/usr/lib/modules" -maxdepth 1 -type d ! -path "/usr/lib/modules" -exec basename '{}' ';' | sort | tail -n 1)"
+
+dkms install -m "xone/$(basename "$(find /usr/src -iname "*xone*" -type d)" | cut -f2 -d-)" -k "${KERNEL_VERSION}"
+
+stat "/usr/lib/modules/${KERNEL_VERSION}"/extra/xone*.ko* # We actually need the kernel objects after build LOL
+rm "/usr/lib/modules/${KERNEL_VERSION}"/extra/xone_wired.ko* # XONE wired removes support for a _lot_ for hardware supported by xpad, we want that one instead here.
+sed -i "/xpad/d" /usr/lib/modprobe.d/*-xone.conf # This blacklists xpad by default
+grep -v "blacklist xpad" /usr/lib/modprobe.d/*-xone.conf
+
+sed -i -f - /usr/lib/os-release <<EOF
+s|^NAME=.*|NAME=\"Zirconium Jackrabbit\"|
+s|^PRETTY_NAME=.*|PRETTY_NAME=\"Zirconium Jackrabbit\"|
+EOF
+
+echo 'import "/usr/share/zirconium/just/67-gamerslop.just"' >> /usr/share/zirconium/just/00-start.just
