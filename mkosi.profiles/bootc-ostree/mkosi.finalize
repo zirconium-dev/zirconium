@@ -1,7 +1,0 @@
-#!/bin/bash
-set -xeuo pipefail
-
-rm -rf "${BUILDROOT:?}/usr/etc" # ostree hates this :)
-# bootc container lint
-rm -rf "${BUILDROOT:?}/var"
-rm -rf "${BUILDROOT:?}/boot"
