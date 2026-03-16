@@ -189,7 +189,7 @@ jobs:
           echo "remote_image_digest=$(< /tmp/digestfile)" | tee "${GITHUB_OUTPUT}"
 
       - name: Install Cosign
-        uses: sigstore/cosign-installer@v4.0.0
+        uses: sigstore/cosign-installer@v4.1.0
         if: inputs.publish
 
       - name: Sign Image
@@ -318,7 +318,7 @@ jobs:
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
 
       - name: Install Cosign
-        uses: sigstore/cosign-installer@v4.0.0
+        uses: sigstore/cosign-installer@v4.1.0
         if: github.event_name != 'pull_request'
 
       - name: Publish manifest with unified architecture and sign
