@@ -28,8 +28,9 @@ stat /usr/share/pki/containers/jackrabbit.pub
 stat /usr/bin/luks*tpm*
 stat /usr/share/ublue-os/just/update.just
 stat /usr/bin/uupd
-stat /usr/bin/taidan
-stat /usr/lib/systemd/system/taidan*.service
+# FIXME: wait until taidan gets this PR https://github.com/Ultramarine-Linux/taidan/pull/142/changes
+# stat /usr/bin/taidan
+# stat /usr/lib/systemd/system/taidan*.service
 stat /usr/lib/systemd/system/uupd.service
 stat /usr/lib/systemd/system/uupd.timer
 stat /usr/lib/systemd/system/brew-setup.service
