@@ -29,7 +29,7 @@ ostree-rechunk:
           -t \
           -v /var/lib/containers:/var/lib/containers \
           "quay.io/centos-bootc/centos-bootc:stream10" \
-          /usr/libexec/bootc-base-imagectl rechunk --max-layers 167 \
+          /usr/libexec/bootc-base-imagectl rechunk --max-layers 120 \
           "{{image}}" \
           "{{image}}" || exit 1
 
