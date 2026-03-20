@@ -1,0 +1,9 @@
+#!/bin/bash
+# SPDX-License-Identifier: LGPL-2.1-or-later
+set -e
+
+# Capture the entirety of /etc in /usr/share/factory/etc so we can use
+# systemd-tmpfiles to symlink individual directories from it to /etc.
+mkdir -p "$BUILDROOT/usr/share/factory/"
+cp --archive --no-target-directory --update=none "$BUILDROOT/etc" "$BUILDROOT/usr/share/factory/etc"
+ln -sr "$BUILDROOT/usr" "$BUILDROOT/usr/share/factory/usr"
