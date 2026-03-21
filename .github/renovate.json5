@@ -6,6 +6,9 @@
 
   "rebaseWhen": "never",
 
+  "git-submodules": {
+    "enabled": true
+  },
   "packageRules": [
     {
       "automerge": true,
