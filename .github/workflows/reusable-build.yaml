@@ -14,7 +14,7 @@ on:
       default-tag:
         description: "Default tag to push to"
         required: false
-        type: boolean
+        type: string
         default: "latest"
       platforms:
         description: "The platforms to build the image for"
@@ -279,13 +279,9 @@ jobs:
           tags: |
             type=raw,value=${{ env.DEFAULT_TAG }}
             type=raw,value=${{ env.DEFAULT_TAG }}.{{date 'YYYYMMDD'}}
-            type=raw,value={{date 'YYYYMMDD'}}
+            type=raw,value={{ date 'YYYYMMDD'}},enable=${{ env.DEFAULT_TAG == 'latest' }}
             type=ref,event=pr
             type=sha,enable=${{ github.event_name == 'pull_request' }}
-            ${{ case(
-              ${{ env.DEFAULT_TAG }} == 'latest', '${{date 'YYYYMMDD'}}',
-              ''
-            ) }}
           labels: |
             containers.bootc=1
             io.artifacthub.package.deprecated=false
