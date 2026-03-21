@@ -56,14 +56,14 @@ rechunk:
     #!/usr/bin/env bash
     IMG="{{ image }}"
     # podman pull $IMG # image must be available locally
-    export CHUNKAH_CONFIG_STR="$(sudo podman inspect "${IMG}")"
+    export CHUNKAH_CONFIG_STR="$(podman inspect "${IMG}")"
     podman run --rm "--mount=type=image,src=${IMG},dest=/chunkah" -e CHUNKAH_CONFIG_STR quay.io/jlebon/chunkah build --label ostree.bootable=1 --compressed --max-layers 67 | \
         podman load | \
         sort -n | \
         head -n1 | \
         cut -d, -f2 | \
         cut -d: -f3 | \
-        xargs -I{} sudo podman tag {} {{image}}
+        xargs -I{} podman tag {} {{image}}
 
 clean:
     mkosi clean
