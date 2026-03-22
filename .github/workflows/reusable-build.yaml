@@ -140,7 +140,7 @@ jobs:
           if [ "$CI_MKOSI_RELEASE" != "" ] ; then
             RELEASE_ARGUMENTS+=("--release=$CI_MKOSI_RELEASES")
           fi
-          sudo env IMAGE_FULL="localhost/${IMAGE_NAME}:${DEFAULT_TAG}" mkosi -B -ff ${PROFILE_ARGUMENTS} ${RELEASE_ARGUMENTS}
+          sudo env IMAGE_FULL="localhost/${IMAGE_NAME}:${DEFAULT_TAG}" mkosi -B -ff --debug ${PROFILE_ARGUMENTS} ${RELEASE_ARGUMENTS}
 
       - name: Load image
         id: load
