@@ -250,7 +250,7 @@ jobs:
       id-token: write
     steps:
       - name: Install dependencies
-        run: apk add bash coreutils curl docker findutils fuse-overlayfs git grep jq podman sed
+        run: apk add bash coreutils curl docker findutils fuse-overlayfs git grep jq podman sed gettext
 
       - name: Exit on failure
         shell: bash
