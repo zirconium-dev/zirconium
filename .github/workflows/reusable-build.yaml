@@ -92,13 +92,6 @@ jobs:
       matrix: ${{fromJson(needs.generate_matrix.outputs.matrix)}}
     runs-on: ${{ matrix.platform == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
     steps:
-      - name: Enable cache for brew
-        uses: actions/cache@v5
-        id: brew-cache
-        with:
-          path: /home/linuxbrew
-          key: brew-${{ matrix.platform }}
-
       - name: Mount BTRFS for podman storage
         if: matrix.platform != 'arm64' && inputs.cleanup_action
         uses: ublue-os/container-storage-action@dc1f4c8f17b672069e921f001132f7cf98a423a6
@@ -115,8 +108,17 @@ jobs:
       - name: Setup Just
         uses: extractions/setup-just@f8a3cce218d9f83db3a2ecd90e41ac3de6cdfd9b # v3
 
+      - name: Enable cache for brew
+        uses: actions/cache@v5
+        if: inputs.publish
+        id: brew-cache
+        with:
+          path: /home/linuxbrew
+          key: brew-${{ matrix.platform }}
+
       - name: Setup image cache
         uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        if: inputs.publish
         env:
           MATRIX_BASE_NAME: ${{ matrix.base_name }}
         with:
