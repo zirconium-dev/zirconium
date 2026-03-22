@@ -137,7 +137,7 @@ jobs:
             PROFILE_ARGUMENTS+=("--profile=$CI_MKOSI_PROFILES")
           fi
           RELEASE_ARGUMENTS=()
-          if [ "$CI_MKOSI_RELEASES" != "" ] ; then
+          if [ "$CI_MKOSI_RELEASE" != "" ] ; then
             RELEASE_ARGUMENTS+=("--release=$CI_MKOSI_RELEASES")
           fi
           sudo env IMAGE_FULL="localhost/${IMAGE_NAME}:${DEFAULT_TAG}" mkosi -B -ff ${PROFILE_ARGUMENTS} ${RELEASE_ARGUMENTS}
