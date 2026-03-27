@@ -1,2 +1,5 @@
 skip_pages = [ "theme", "codecs", "tweaks", "nightlight", "browser", "categories", "inputmethod" ]
 org = "Zirconium"
+
+[taidan0]
+skip_dnf = true

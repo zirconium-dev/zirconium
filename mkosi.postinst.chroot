@@ -20,7 +20,7 @@ just --completions fish | sed -E 's/([\(_" ])just/\1zjust/g' > /usr/share/fish/v
 fc-cache --force --really-force --system-only --verbose # recreate font-cache to pick up the added fonts
 
 # These files NEED to be on the image.
-grep -F -e "ghcr.io/zirconium-dev" /etc/containers/policy.json
+grep -F -e "ghcr.io/zirconium-dev" /usr/share/factory/etc/containers/policy.json
 grep -F -e "Comment=Central repository of Flatpak applications" /usr/share/flatpak/remotes.d/flathub.flatpakrepo
 stat /usr/share/flatpak/remotes.d/flathub.flatpakrepo
 stat /usr/share/pki/containers/zirconium.pub
