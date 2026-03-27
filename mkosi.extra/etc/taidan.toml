@@ -1,2 +1,4 @@
 skip_pages = [ "theme", "codecs", "tweaks", "nightlight", "browser", "categories", "inputmethod" ]
 org = "Zirconium"
+i18n.imf = "fcitx5"
+taidan0.whatever = "nooo"
