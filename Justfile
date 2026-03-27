@@ -1,5 +1,5 @@
 image := env("IMAGE_FULL", "localhost/zirconium:latest")
-filesystem := env("BUILD_FILESYSTEM", "ext4")
+filesystem := env("BUILD_FILESYSTEM", "btrfs")
 
 default:
     #!/usr/bin/env bash
@@ -20,7 +20,7 @@ lint:
 load:
     #!/usr/bin/env bash
     set -x
-    podman load -i "$(find mkosi.profiles/bootc-ostree/mkosi.output/* -maxdepth 0 -type d -printf "%T@ ,%p\n" -iname "_*" -print0 | sort -n | head -n1 | cut -d, -f2)" -q | cut -d: -f3 | xargs -I{} podman tag {} {{image}}
+    podman load -i "$(find mkosi.output/* -maxdepth 0 -type d -printf "%T@ ,%p\n" -iname "_*" -print0 | sort -n | head -n1 | cut -d, -f2)" -q | cut -d: -f3 | xargs -I{} podman tag {} {{image}}
 
 ostree-rechunk:
     #!/usr/bin/env bash
@@ -50,7 +50,7 @@ disk-image $filesystem=filesystem:
     if [ ! -e "${BUILD_BASE_DIR:-.}/bootable.img" ] ; then
         fallocate -l 20G "${BUILD_BASE_DIR:-.}/bootable.img"
     fi
-    just bootc install to-disk --via-loopback /data/bootable.img --filesystem "${filesystem}" --wipe
+    just bootc install to-disk --generic-image --bootloader grub --via-loopback /data/bootable.img --filesystem "${filesystem}" --wipe
 
 rechunk:
     #!/usr/bin/env bash
