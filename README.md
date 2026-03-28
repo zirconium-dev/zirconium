@@ -39,7 +39,9 @@ sudo bootc switch ghcr.io/zirconium-dev/zirconium-nvidia:latest
 Currently the Nvidia kernel module is not being signed so there is no way of using secure boot on the `-nvidia` images. ([related issue](https://github.com/zirconium-dev/zirconium/issues/108))
 
 ## Can I still customize Niri/DankMaterialShell?
-Yes! We do update our dotfiles in OS updates, however you're not forced to use them. We're hoping at some point to be able to make the dotfile update process less destructive. 
+Yes! Put your Niri customizations in `~/.config/niri/local.kdl` (for your user) or `/etc/niri/local.kdl` (for system-wide customizations).
+
+We update our dotfiles in OS updates, which will overwrite the default `~/.config/niri/config.kdl` file. If you edit it, it might get overwritten in a future update. 
 
 ## Zirconium is a stupid name. Why did you pick Zirconium?
 A weird wax baby made me.
