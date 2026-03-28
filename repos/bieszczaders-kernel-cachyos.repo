@@ -1,0 +1,10 @@
+[copr:copr.fedorainfracloud.org:bieszczaders:kernel-cachyos]
+name=Copr repo for kernel-cachyos owned by bieszczaders
+baseurl=https://download.copr.fedorainfracloud.org/results/bieszczaders/kernel-cachyos/fedora-$releasever-$basearch/
+type=rpm-md
+skip_if_unavailable=True
+gpgcheck=1
+gpgkey=https://download.copr.fedorainfracloud.org/results/bieszczaders/kernel-cachyos/pubkey.gpg
+repo_gpgcheck=0
+enabled=0
+enabled_metadata=1
