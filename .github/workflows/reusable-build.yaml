@@ -135,6 +135,10 @@ jobs:
           sudo mv mkosi /usr/src/mkosi
           sudo ln -sf "/usr/src/mkosi/bin/mkosi" /usr/bin/mkosi
 
+      - name: Render configuration (for debugging)
+        runs: |
+          mkosi cat-config --debug
+
       - name: Build image
         id: build
         env:
