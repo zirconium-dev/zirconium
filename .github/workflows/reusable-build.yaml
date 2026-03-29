@@ -136,7 +136,7 @@ jobs:
           sudo ln -sf "/usr/src/mkosi/bin/mkosi" /usr/bin/mkosi
 
       - name: Render configuration (for debugging)
-        runs: |
+        run: |
           mkosi cat-config --debug
 
       - name: Build image
