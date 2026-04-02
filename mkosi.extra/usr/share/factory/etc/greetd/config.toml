@@ -5,5 +5,5 @@ service = "greetd-spawn"
 vt = 1
 
 [default_session]
-command = "dms-greeter --command niri"
+command = "dms-greeter --command niri --cache-dir /var/cache/dms-greeter -C /etc/greetd/niri/config.kdl"
 user = "greeter"
