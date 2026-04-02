@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+set -xeuo pipefail
+
+OCR_CURRENT_SCREENSHOT="/tmp/ocrcurrent"
+OCR_CURRENT_TEXT="/tmp/ocrcurrent.txt"
+trap 'rm -f "$OCR_CURRENT_SCREENSHOT"' EXIT
+
+rm -f "${OCR_CURRENT_SCREENSHOT}"
+rm -f "${OCR_CURRENT_TEXT}"
+niri msg action $1 --path "${OCR_CURRENT_SCREENSHOT}"
+TIMEOUT=0
+while [ ! -e "${OCR_CURRENT_SCREENSHOT}" ] ; do
+  if [ "${TIMEOUT}" -ge 60 ] ; then
+    echo "Failed finding screenshot on filesystem"
+    exit 1
+  fi
+
+  # IPC call is non-blocking but we want that
+  echo "Waiting for screenshot to show up"
+  sleep 0.5
+  TIMEOUT="$(( TIMEOUT + 1 ))"
+done
+
+tesseract "${OCR_CURRENT_SCREENSHOT}" "${OCR_CURRENT_TEXT%.*}"
+wl-copy < "${OCR_CURRENT_TEXT}"
