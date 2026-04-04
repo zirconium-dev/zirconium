@@ -2,26 +2,16 @@
 
 set -xeuo pipefail
 
-rpm -i "${SRCDIR}/cache/*dkms-nvidia*$(arch)*.rpm" --noscripts --nodeps
+ls -la "${SRCDIR}/cache"
+rpm -i "${SRCDIR}/cache/*dkms-nvidia*.rpm" --noscripts --nodeps
 
 NVIDIA_VERSION="$(basename "$(find /usr/src -iname "*nvidia-*" -type d -maxdepth 1)" | cut -d- -f2)"
-if [ "${NVIDIA_VERSION}" == "590.48.01" ] ; then
-  cd "/usr/src/nvidia-${NVIDIA_VERSION}"
-  cp "${SRCDIR}/cache/cachy.patch" .
-  git apply --stat cachy.patch
-  git apply --check cachy.patch
-  git apply < cachy.patch
-  rm cachy.patch
-  cd /
-fi
 
 # we need to override the `OUTPUTDIR` environment variable due to it being set by mkosi
 KERNEL_VERSION="$(find "/usr/lib/modules" -maxdepth 1 -type d ! -path "/usr/lib/modules" -exec basename '{}' ';' | sort | tail -n 1)"
 OUTPUTDIR=out dkms install -m "nvidia/${NVIDIA_VERSION}" -k "${KERNEL_VERSION}"
 find /usr/lib/modules -iname "nvidia*.ko*"
 stat "/usr/lib/modules/${KERNEL_VERSION}"/extra/nvidia*.ko* # We actually need the kernel objects after build LOL
-
-mv /etc/modprobe.d/nvidia-modeset.conf /usr/lib/modprobe.d/nvidia-modeset.conf
 
 # we must force driver load to fix black screen on boot for nvidia desktops
 sed -i 's/omit_drivers/force_drivers/g' /usr/lib/dracut/dracut.conf.d/99-nvidia.conf
