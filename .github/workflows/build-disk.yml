@@ -34,12 +34,24 @@ jobs:
 
       - name: Build ISO
         id: build-iso
-        uses: osbuild/bootc-image-builder-action@main
-        with:
-          config-file: ${{ matrix.flavor == '-nvidia' && './iso-nvidia.toml' || './iso.toml' }}
-          image: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}${{ matrix.flavor }}:latest
-          types: anaconda-iso
-          rootfs: btrfs
+        env:
+          TARGET_IMAGE: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}${{ matrix.flavor }}:latest
+          TARGET_CONFIG: ${{ matrix.flavor == '-nvidia' && './iso-nvidia.toml' || './iso.toml' }}
+        run: |
+          sudo podman pull "${TARGET_IMAGE}"
+          sudo podman run --rm -it -v ./rpm-gpg:/out:Z "${TARGET_IMAGE}" bash -c 'cp /etc/pki/rpm-gpg/* /out'
+          sudo mkdir -p output
+          sudo podman run \
+            --rm -it \
+            --privileged \
+            --pull=newer \
+            --security-opt label=type:unconfined_t \
+            -v "${TARGET_CONFIG}:/config.toml:ro" \
+            -v ./output/:/output \
+            -v /var/lib/containers/storage:/var/lib/containers/storage \
+            -v ./rpm-gpg/:/etc/pki/rpm-gpg/:ro \
+            quay.io/centos-bootc/bootc-image-builder:latest --type iso --rootfs btrfs --use-librepo=True \
+            "${TARGET_IMAGE}"
 
       - name: Upload Artifact
         if: github.event_name == 'pull_request'
