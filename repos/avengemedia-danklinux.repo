@@ -8,4 +8,3 @@ gpgkey=https://download.copr.fedorainfracloud.org/results/avengemedia/danklinux/
 repo_gpgcheck=0
 enabled=0
 enabled_metadata=1
-priority=1
