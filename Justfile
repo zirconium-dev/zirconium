@@ -11,8 +11,13 @@ default:
     sudo env BUILD_BASE_DIR=/tmp just disk-image
     vmbuddy -f /tmp/bootable.img
 
-build:
-    mkosi -B --debug
+build: build-ostree
+
+build-ostree:
+    mkosi -B --debug --profile=bootc-ostree
+
+build-sysupdate:
+    mkosi -B --debug --profile=sysupdate
 
 lint:
     podman run --rm -it --entrypoint=bootc {{ image }} container lint

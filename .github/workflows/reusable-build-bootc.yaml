@@ -136,38 +136,40 @@ jobs:
           sudo ln -sf "/usr/src/mkosi/bin/mkosi" /usr/bin/mkosi
 
       - name: Render configuration (for debugging)
-        run: |
-          mkosi cat-config --debug
+        run: mkosi cat-config --debug
 
       - name: Build image
         id: build
         env:
           CI_MKOSI_PROFILES: ${{ inputs.profiles }}
           CI_MKOSI_RELEASE: ${{ inputs.release }}
+          IMAGE_FULL: localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
         run: |
-          PROFILE_ARGUMENTS=()
-          if [ "$CI_MKOSI_PROFILES" != "" ] ; then
-            PROFILE_ARGUMENTS+=("--profile=$CI_MKOSI_PROFILES")
-          fi
           RELEASE_ARGUMENTS=()
           if [ "$CI_MKOSI_RELEASE" != "" ] ; then
             RELEASE_ARGUMENTS+=("--release=$CI_MKOSI_RELEASE")
           fi
-          sudo env IMAGE_FULL="localhost/${IMAGE_NAME}:${DEFAULT_TAG}" mkosi -B -ff --debug ${PROFILE_ARGUMENTS} ${RELEASE_ARGUMENTS}
+          sudo mkosi -B -ff --debug --profile=bootc-ostree,${CI_MKOSI_PROFILES} ${PROFILE_ARGUMENTS} ${RELEASE_ARGUMENTS}
 
       - name: Load image
         id: load
+        env:
+          IMAGE_FULL: localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
         run: |
-          sudo env IMAGE_FULL="localhost/${IMAGE_NAME}:${DEFAULT_TAG}" $(which just) load
+          sudo "$(which just)" load
 
       - name: Rechunk image
         id: rechunk
+        env:
+          IMAGE_FULL: localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
         run: |
-          sudo env IMAGE_FULL="localhost/${IMAGE_NAME}:${DEFAULT_TAG}" $(which just) ostree-rechunk
+          sudo "$(which just)" ostree-rechunk
 
       - name: Lint image
+        env:
+          IMAGE_FULL: localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
         run: |
-          sudo env IMAGE_FULL="localhost/${IMAGE_NAME}:${DEFAULT_TAG}" $(which just) lint
+          sudo "$(which just)" lint
 
       # https://github.com/actions/cache/issues/1533
       - name: Hack around permission issue caching

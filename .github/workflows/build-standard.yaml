@@ -11,7 +11,7 @@ on:
     branches:
       - main
   schedule:
-    - cron: "0 1 * * TUE" # Every Tuesday at 1am UTC
+    - cron: "0 1 * * TUE"
   merge_group:
   workflow_dispatch:
 
@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   build:
-    uses: ./.github/workflows/reusable-build.yaml
+    uses: ./.github/workflows/reusable-build-bootc.yaml
     secrets: inherit
     with:
       image-name: zirconium
