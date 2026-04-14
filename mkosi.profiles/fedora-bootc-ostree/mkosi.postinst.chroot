@@ -12,6 +12,8 @@ chmod 0755 /usr/bin/newuidmap /usr/bin/newgidmap
 chmod u-s /usr/bin/newuidmap
 chmod u-s /usr/bin/newgidmap
 
+printf "\n%s\n" "store-root=/etc/selinux" | tee -a /etc/selinux/semanage.conf
+
 # we need this to get modules apparently
 cp -r "/var/lib/selinux/targeted/active" "/etc/selinux/targeted/"
 cp -r "/var/lib/selinux/final" "/etc/selinux/"
@@ -23,3 +25,5 @@ stat "/etc/selinux/targeted/active/file_contexts.homedirs"
 stat "/etc/selinux/targeted/active/modules/100/bootupd/cil"
 stat "/etc/selinux/targeted/active/modules/100/bootupd/hll"
 stat "/etc/selinux/targeted/active/modules/100/bootupd/lang_ext"
+
+grep -F -e "store-root=/etc/selinux" /etc/selinux/semanage.conf
