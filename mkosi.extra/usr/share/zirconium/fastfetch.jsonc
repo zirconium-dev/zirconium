@@ -25,7 +25,7 @@
         {
             "type": "command",
             "key": " ",
-            "text": "echo Based on $(sed 's/release //;s/ ([^)]*)//' /etc/system-release)",
+            "text": "echo Based on $(sed 's/release //;s/ ([^)]*)//' /usr/lib/system-release)",
             "shell": "/bin/bash"
         },
         {

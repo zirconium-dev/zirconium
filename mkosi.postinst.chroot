@@ -59,3 +59,4 @@ s|^DEFAULT_HOSTNAME=.*|DEFAULT_HOSTNAME="zirconium"|
 /^REDHAT_SUPPORT_PRODUCT_VERSION=/d
 EOF
 echo "VARIANT_ID=container" >> /usr/lib/os-release
+ln -s fedora-release /usr/lib/system-release
