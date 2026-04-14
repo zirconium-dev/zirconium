@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   build:
-    uses: ./.github/workflows/reusable-build.yaml
+    uses: ./.github/workflows/reusable-build-bootc.yaml
     secrets: inherit
     with:
       image-name: zirconium-nvidia
