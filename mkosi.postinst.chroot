@@ -26,7 +26,7 @@ stat /usr/share/flatpak/remotes.d/flathub.flatpakrepo
 stat /usr/share/pki/containers/zirconium.pub
 stat /usr/share/pki/containers/jackrabbit.pub
 stat /usr/bin/luks*tpm*
-stat /usr/share/ublue-os/just/update.just
+stat /usr/share/zirconium/just/00-start.just
 stat /usr/bin/uupd
 # FIXME: wait until taidan gets this PR https://github.com/Ultramarine-Linux/taidan/pull/142/changes
 # stat /usr/bin/taidan
