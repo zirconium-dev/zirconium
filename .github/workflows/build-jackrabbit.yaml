@@ -21,11 +21,11 @@ concurrency:
 
 jobs:
   build:
-    uses: ./.github/workflows/reusable-build.yaml
+    uses: ./.github/workflows/reusable-build-bootc.yaml
     secrets: inherit
     with:
       image-name: zirconium-mkosi-jackrabbit
-      platforms: amd64,arm64
+      platforms: amd64
       profiles: jackrabbit
       rechunk: ${{ github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
       publish: ${{ github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
