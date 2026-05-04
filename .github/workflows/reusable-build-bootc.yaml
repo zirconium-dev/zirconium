@@ -57,6 +57,7 @@ env:
   IMAGE_LOGO_URL: "https://avatars.githubusercontent.com/u/237492973?s=400&v=4"
   IMAGE_NAME: "${{ inputs.image-name }}"
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
+  IMAGE_LICENSE: AGPL-2.0
 
 jobs:
   generate_matrix:
@@ -282,7 +283,21 @@ jobs:
         # https://linux.die.net/man/1/date
       - name: Get current date
         id: date
-        run: echo "date=$(date -u +%Y\-%m\-%d\T%H\:%M\:%S\Z)" | tee "${GITHUB_OUTPUT}"
+        run:
+          set -xeuo pipefail
+          echo "date=$(date -u +%Y\-%m\-%d\T%H\:%M\:%S\Z)" >> "${GITHUB_OUTPUT}"
+
+      - name: Get repository metadata
+        id: repodata
+        run:
+          set -xeuo pipefail
+          echo "shortcommit=$(git rev-parse --short HEAD)" >> "${GITHUB_OUTPUT}"
+
+      - name: Get mkosi metadata
+        id: imagemetadata
+        run: |
+          set -xeuo pipefail
+          echo "distributionversion=$(grep "Release=" mkosi.conf | cut -d= -f2)" >> "${GITHUB_OUTPUT}"
 
       - name: Image Metadata
         uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6
@@ -290,7 +305,13 @@ jobs:
         with:
           tags: |
             type=raw,value=${{ env.DEFAULT_TAG }}
+            type=raw,value=${{ steps.imagemetadata.outputs.distributionversion }}
+            type=raw,value=${{ env.DEFAULT_TAG }}+${{ steps.repodata.outputs.shortcommit }}
+            type=raw,value=${{ steps.imagemetadata.outputs.distributionversion }}+${{ steps.repodata.outputs.shortcommit }}
             type=raw,value=${{ env.DEFAULT_TAG }}.{{date 'YYYYMMDD'}}
+            type=raw,value=${{ steps.imagemetadata.outputs.distributionversion }}.{{date 'YYYYMMDD'}}
+            type=raw,value=${{ env.DEFAULT_TAG }}.{{date 'YYYYMMDD'}}+${{ steps.repodata.outputs.shortcommit }}
+            type=raw,value=${{ steps.imagemetadata.outputs.distributionversion }}.{{date 'YYYYMMDD'}}+${{ steps.repodata.outputs.shortcommit }}
             type=raw,value={{ date 'YYYYMMDD'}},enable=${{ env.DEFAULT_TAG == 'latest' }}
             type=ref,event=pr
             type=sha,enable=${{ github.event_name == 'pull_request' }}
@@ -298,7 +319,7 @@ jobs:
             containers.bootc=1
             io.artifacthub.package.deprecated=false
             io.artifacthub.package.keywords=${{ env.IMAGE_KEYWORDS }}
-            io.artifacthub.package.license=AGPL-2.0
+            io.artifacthub.package.license=${{ env.IMAGE_LICENSE }}
             io.artifacthub.package.logo-url=${{ env.IMAGE_LOGO_URL }}
             io.artifacthub.package.prerelease=false
             io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/${{ github.sha }}/README.md
