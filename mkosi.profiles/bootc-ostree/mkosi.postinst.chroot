@@ -1,8 +1,8 @@
 #!/bin/bash
 set -xeuo pipefail
 
-KERNEL_PATH="$(find /usr/lib/modules -maxdepth 1 -type d | grep -v -E "*.img" | tail -n 1)"
-dracut --force "${KERNEL_PATH}/initramfs.img" --kver "$(basename "${KERNEL_PATH}")"
+KERNEL_PATH="$(find /usr/lib/modules -maxdepth 1 -type d | grep -v ".*.img" | tail -n 1)"
+dracut -v --force "${KERNEL_PATH}/initramfs.img" --kver "$(basename "${KERNEL_PATH}")"
 
 bootupctl backend generate-update-metadata
 
