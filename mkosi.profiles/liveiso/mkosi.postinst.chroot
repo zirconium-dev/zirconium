@@ -2,7 +2,9 @@
 
 set -xeuo pipefail
 
-kernel=$(kernel-install list --json pretty | jq -r '.[] | select(.has_kernel == true) | .version')
-DRACUT_NO_XATTR=1 dracut -v --force --zstd --reproducible --no-hostonly \
-    --add "dmsquash-live dmsquash-live-autooverlay" \
-    "/usr/lib/modules/${kernel}/initramfs.img" "${kernel}"
+systemd-firstboot --timezone UTC
+sed -i '/\/etc\/greetd/d' /usr/lib/tmpfiles.d/99-zirconium-factory.conf
+systemctl mask systemd-firstboot
+
+KERNEL_PATH="$(find /usr/lib/modules -maxdepth 1 -type d | grep -v ".*.img" | tail -n 1)"
+dracut -v --force --add "dmsquash-live dmsquash-live-autooverlay" "${KERNEL_PATH}/initramfs.img" --kver "$(basename "${KERNEL_PATH}")"
