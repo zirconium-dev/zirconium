@@ -4,7 +4,7 @@ set -xeuo pipefail
 
 # Automatic updates without rebooting the system all the time
 sed -i 's|#AutomaticUpdatePolicy.*|AutomaticUpdatePolicy=stage|' /etc/rpm-ostreed.conf
-sed -i 's|#LockLayering.*|LockLayering=true|' /etc/rpm-ostreed.conf
+sed -i 's|#LockLayering.*|LockLayering=true|' /etc/rpm-ostreed.con
 
 # For rootless podman
 chmod 0755 /usr/bin/newuidmap /usr/bin/newgidmap
