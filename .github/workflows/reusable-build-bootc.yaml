@@ -277,11 +277,6 @@ jobs:
             fi
           done
 
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          submodules: true
-
         # This generates a timestamp like what is defined on the ArtifactHub documentation
         # E.G: 2022-02-08T15:38:15Z'
         # https://artifacthub.io/docs/topics/repositories/container-images/
@@ -300,9 +295,15 @@ jobs:
 
       - name: Get mkosi metadata
         id: imagemetadata
+        env:
+          MANUAL_RELEASE: ${{ inputs.release }}
         run: |
           set -xeuo pipefail
-          echo "distributionversion=$(grep "Release=" mkosi.conf | cut -d= -f2)" >> "${GITHUB_OUTPUT}"
+          if [ "$MANUAL_RELEASE" != "" ] ; then
+            echo "distributionversion=${MANUAL_RELEASE}" >> "${GITHUB_OUTPUT}"
+          else
+            echo "distributionversion=$(grep "Release=" mkosi.conf | cut -d= -f2)" >> "${GITHUB_OUTPUT}"
+          fi
 
       - name: Image Metadata
         uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6
