@@ -292,12 +292,6 @@ jobs:
           set -xeuo pipefail
           echo "date=$(date -u +%Y\-%m\-%d\T%H\:%M\:%S\Z)" >> "${GITHUB_OUTPUT}"
 
-      - name: Get repository metadata
-        id: repodata
-        run:
-          set -xeuo pipefail
-          echo "shortcommit=$(git rev-parse --short HEAD)" >> "${GITHUB_OUTPUT}"
-
       - name: Get mkosi metadata
         id: imagemetadata
         run: |
@@ -311,12 +305,12 @@ jobs:
           tags: |
             type=raw,value=${{ env.DEFAULT_TAG }}
             type=raw,value=${{ steps.imagemetadata.outputs.distributionversion }}
-            type=raw,value=${{ env.DEFAULT_TAG }}+${{ steps.repodata.outputs.shortcommit }}
-            type=raw,value=${{ steps.imagemetadata.outputs.distributionversion }}+${{ steps.repodata.outputs.shortcommit }}
+            type=raw,value=${{ env.DEFAULT_TAG }}+${{ github.sha }}
+            type=raw,value=${{ steps.imagemetadata.outputs.distributionversion }}+${{ github.sha }}
             type=raw,value=${{ env.DEFAULT_TAG }}.{{date 'YYYYMMDD'}}
             type=raw,value=${{ steps.imagemetadata.outputs.distributionversion }}.{{date 'YYYYMMDD'}}
-            type=raw,value=${{ env.DEFAULT_TAG }}.{{date 'YYYYMMDD'}}+${{ steps.repodata.outputs.shortcommit }}
-            type=raw,value=${{ steps.imagemetadata.outputs.distributionversion }}.{{date 'YYYYMMDD'}}+${{ steps.repodata.outputs.shortcommit }}
+            type=raw,value=${{ env.DEFAULT_TAG }}.{{date 'YYYYMMDD'}}+${{ github.sha }}
+            type=raw,value=${{ steps.imagemetadata.outputs.distributionversion }}.{{date 'YYYYMMDD'}}+${{ github.sha }}
             type=raw,value={{ date 'YYYYMMDD'}},enable=${{ env.DEFAULT_TAG == 'latest' }}
             type=ref,event=pr
             type=sha,enable=${{ github.event_name == 'pull_request' }}
