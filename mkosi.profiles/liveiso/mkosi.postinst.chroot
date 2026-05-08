@@ -2,6 +2,8 @@
 
 set -xeuo pipefail
 
+mkdir -p /usr/lib/zirconium/install
+cp -r "${SRCDIR}/cache/zirconium-oci" /usr/lib/zirconium/install/
 systemd-firstboot --timezone UTC
 sed -i '/\/etc\/greetd/d' /usr/lib/tmpfiles.d/99-zirconium-factory.conf
 systemctl mask systemd-firstboot
