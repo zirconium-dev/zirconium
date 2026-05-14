@@ -31,6 +31,11 @@ on:
         required: false
         type: boolean
         default: true
+      cleanup_action:
+        description: "Use cleanup action from ublue to get more storage on CI"
+        required: false
+        type: boolean
+        default: false
       profiles:
         description: "Extra mkosi profiles to use"
         required: false
@@ -49,10 +54,11 @@ env:
   DEFAULT_TAG: "${{ inputs.default-tag }}"
   IMAGE_DESC: "Opinionated niri + bootc image"
   IMAGE_KEYWORDS: "bootc,niri"
+  IMAGE_LICENSE: AGPL-2.0
   IMAGE_LOGO_URL: "https://avatars.githubusercontent.com/u/237492973?s=400&v=4"
   IMAGE_NAME: "${{ inputs.image-name }}"
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
-  IMAGE_LICENSE: AGPL-2.0
+
 
 jobs:
   generate_matrix:
@@ -65,15 +71,11 @@ jobs:
         env:
           PLATFORMS: "${{ inputs.platforms }}"
         run: |
-          # turn the comma separated string into a list
-          platforms=()
-          IFS=',' read -r -a platforms <<< "${PLATFORMS}"
-
           MATRIX="{\"include\":[]}"
-          for platform in "${platforms[@]}"; do
-            MATRIX="$(echo "${MATRIX}" | jq ".include += [{\"platform\": \"${platform}\"}]")"
+          for platform in $(tr ',' ' ' <<< "${PLATFORMS}") ; do
+            MATRIX="$(jq -c ".include += [{\"platform\": \"${platform}\"}]" <<< "${MATRIX}")"
           done
-          echo "matrix=$(echo "${MATRIX}" | jq -c '.')" >> $GITHUB_OUTPUT
+          echo "matrix=${MATRIX}" >> $GITHUB_OUTPUT
 
   build_push:
     name: Build and push image
@@ -85,47 +87,46 @@ jobs:
     needs: generate_matrix
     strategy:
       fail-fast: false
-      matrix: ${{fromJson(needs.generate_matrix.outputs.matrix)}}
+      matrix: ${{ fromJson(needs.generate_matrix.outputs.matrix) }}
     runs-on: ${{ matrix.platform == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
     steps:
-      - name: Free disk space
-        uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
+      - name: Mount BTRFS for podman storage
+        if: matrix.platform != 'arm64' && inputs.cleanup_action
+        uses: ublue-os/container-storage-action@dc1f4c8f17b672069e921f001132f7cf98a423a6
+        continue-on-error: true
         with:
-          exclude: |
-            /opt/hostedtoolcache/Python
-          skip-if-available: "64G"
+          target-dir: /var/lib/containers
+          mount-opts: compress-force=zstd:2
 
       - name: Checkout
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           submodules: true
 
-      - name: Setup Just
-        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
-
-      - name: Enable cache for brew
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
-        if: inputs.publish
-        id: brew-cache
-        with:
-          path: /home/linuxbrew
-          key: brew-${{ matrix.platform }}
-
-      - name: Setup image cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        if: inputs.publish
-        env:
-          MATRIX_BASE_NAME: ${{ matrix.base_name }}
-        with:
-          path: mkosi.cache
-          key: ${{ runner.os }}-mkosi-${{ env.IMAGE_NAME }}-${{ matrix.platform }}
-          restore-keys: |
-            ${{ runner.os }}-mkosi-${{ env.IMAGE_NAME }}-${{ matrix.platform }}
+      # We need newer podman due to old podman not supporting lots of flags
+      - name: Update podman and install just
+        shell: bash
+        run: |
+          set -eux
+          # Require the runner is ubuntu-24.04
+          IDV=$(. /usr/lib/os-release && echo ${ID}-${VERSION_ID})
+          test "${IDV}" = "ubuntu-24.04"
+          # resolute is the next release. The azure.archive.ubuntu.com mirror only carries amd64.
+          # Other architectures like arm64 use ports.ubuntu.com/ubuntu-ports.
+          if [ "$(dpkg --print-architecture)" = "amd64" ]; then
+            mirror="http://azure.archive.ubuntu.com/ubuntu"
+          else
+            mirror="http://ports.ubuntu.com/ubuntu-ports"
+          fi
+          echo "deb ${mirror} resolute universe main" | sudo tee /etc/apt/sources.list.d/resolute.list
+          /bin/time -f '%E %C' sudo apt update
+          # skopeo is currently older in resolute for some reason hence --allow-downgrades
+          /bin/time -f '%E %C' sudo apt install -y --allow-downgrades crun/resolute buildah/resolute podman/resolute skopeo/resolute just/resolute
+          podman --version
 
       - name: Install dependencies for build
         run: |
           set -x
-          sudo apt update -y
           sudo apt install -y --no-install-recommends bubblewrap debian-archive-keyring python3-gpg python3-hawkey python3-libcomps python3-unbound
           git clone https://github.com/systemd/mkosi.git
           sudo mv mkosi /usr/src/mkosi
@@ -155,6 +156,7 @@ jobs:
           sudo env IMAGE_FULL="localhost/${IMAGE_NAME}:${DEFAULT_TAG}" "$(which just)" load
 
       - name: Rechunk image
+        if: inputs.rechunk
         run: |
           set -e
           sudo env IMAGE_FULL="localhost/${IMAGE_NAME}:${DEFAULT_TAG}" "$(which just)" ostree-rechunk
@@ -164,60 +166,37 @@ jobs:
           set -e
           sudo env IMAGE_FULL="localhost/${IMAGE_NAME}:${DEFAULT_TAG}" "$(which just)" lint
 
-      # https://github.com/actions/cache/issues/1533
-      - name: Hack around permission issue caching
-        id: cache-perms
-        run: |
-          sudo chmod 777 --recursive mkosi.cache
-
       - name: Login to GitHub Container Registry
         if: inputs.publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LOGIN_USER: ${{ github.actor }}
-        run: |
-          echo "${GITHUB_TOKEN}" | sudo podman login -u "${LOGIN_USER}" --password-stdin "ghcr.io"
-          echo "${GITHUB_TOKEN}" | docker login -u "${LOGIN_USER}" --password-stdin "ghcr.io" # For cosign
-
-      # TODO: remove me when we have a new podman in 26.04 runners
-      # needed because old podman doesn't push layer annotations for
-      # the rpm-ostree rechunker at all
-      - name: Install Podman from Brew
-        if: inputs.publish && steps.brew-cache.outputs.cache-hit != 'true'
-        run: |
-          /home/linuxbrew/.linuxbrew/bin/brew install podman
+        run: echo "${GITHUB_TOKEN}" | sudo podman login -u "${LOGIN_USER}" --password-stdin "ghcr.io"
 
       - name: Push to GHCR
         if: inputs.publish
         id: push
         env:
-          IMAGE_REGISTRY: ${{ env.IMAGE_REGISTRY }}
-          IMAGE_NAME: ${{ env.IMAGE_NAME }}
           IMAGE_DIGEST: ${{ steps.load.outputs.digest }}
-          PLATFORM: ${{ matrix.platform }}
           MAX_RETRIES: 3
+          PLATFORM: ${{ matrix.platform }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+          SIGNING_SECRET: ${{ secrets.SIGNING_SECRET }}
         run: |
           set -x
+          PRIVATE_KEY_FILE="$(mktemp)"
+          echo "${SIGNING_SECRET}" > "${PRIVATE_KEY_FILE}"
+          trap 'rm -f $PRIVATE_KEY_FILE' EXIT
+          sudo mkdir -p "/etc/containers/registries.d/"
+          echo -e "docker:\n  ${IMAGE_REGISTRY}:\n    use-sigstore-attachments: true" | sudo tee "/etc/containers/registries.d/${REPOSITORY_OWNER}.yaml"
+
+          DIGESTFILE="/tmp/digestfile" # This needs to be r/w, non-existent so that podman can write to it
           # HACK: push two times so layer annotations are present
           # TODO: remove me when https://github.com/containers/podman/issues/27796 fixed
           for _ in $(seq 2); do
-            for i in $(seq "${MAX_RETRIES}"); do
-              sudo /home/linuxbrew/.linuxbrew/bin/podman push --compression-format=zstd --digestfile=/tmp/digestfile "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}-${PLATFORM}" && break || sleep $((5 * i));
-            done
+            sudo podman push --retry "${MAX_RETRIES}" --compression-format=zstd --digestfile="${DIGESTFILE}" "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}-${PLATFORM}" "--sign-passphrase-file=/dev/null" "--sign-by-sigstore-private-key=${PRIVATE_KEY_FILE}"
           done
-          echo "remote_image_digest=$(< /tmp/digestfile)" | tee "${GITHUB_OUTPUT}"
-
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
-        if: inputs.publish
-
-      - name: Sign Image
-        if: inputs.publish
-        env:
-          REMOTE_IMAGE_DIGEST: ${{ steps.push.outputs.remote_image_digest }}
-          COSIGN_EXPERIMENTAL: false
-          COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
-        run: cosign sign -y --new-bundle-format=false --use-signing-config=false --key env://COSIGN_PRIVATE_KEY "${IMAGE_REGISTRY}/${IMAGE_NAME}@${REMOTE_IMAGE_DIGEST}"
+          echo "remote_image_digest=$(< "${DIGESTFILE}")" | tee "${GITHUB_OUTPUT}"
 
       - name: Create Job Outputs
         if: inputs.publish
@@ -246,17 +225,11 @@ jobs:
     if: always()
     needs:
       - build_push
-    container:
-      image: docker.io/library/alpine:latest
-      options: --privileged --security-opt seccomp=unconfined
     permissions:
       contents: read
       packages: write
       id-token: write
     steps:
-      - name: Install dependencies
-        run: apk add bash coreutils curl docker findutils fuse-overlayfs git grep jq podman sed gettext
-
       - name: Exit on failure
         shell: bash
         env:
@@ -270,9 +243,7 @@ jobs:
           done
 
       - name: Checkout
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
-        with:
-          submodules: true
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
         # This generates a timestamp like what is defined on the ArtifactHub documentation
         # E.G: 2022-02-08T15:38:15Z'
@@ -297,7 +268,8 @@ jobs:
           fi
 
       - name: Image Metadata
-        uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6
+        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6
+        if: inputs.publish
         id: metadata
         with:
           tags: |
@@ -323,11 +295,39 @@ jobs:
             org.opencontainers.image.created=${{ steps.date.outputs.date }}
             org.opencontainers.image.description=${{ env.IMAGE_DESC }}
             org.opencontainers.image.documentation=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/${{ github.sha }}/README.md
-            org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/blob/${{ github.sha }}/Containerfile
+            org.opencontainers.image.licenses=${{ env.IMAGE_LICENSE }}
+            org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/commit/${{ github.sha }}
             org.opencontainers.image.title=${{ env.IMAGE_NAME }}
             org.opencontainers.image.url=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/tree/${{ github.sha }}
             org.opencontainers.image.vendor=${{ github.repository_owner }}
             org.opencontainers.image.version=${{ env.DEFAULT_TAG }}.{{date 'YYYYMMDD'}}
+
+      - name: Login to GitHub Container Registry
+        if: inputs.publish
+        env:
+          REGISTRY: ghcr.io
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+        run: echo "${GITHUB_TOKEN}" | podman login -u "${GITHUB_ACTOR}" --password-stdin "${REGISTRY}"
+
+      - name: Update podman and install just
+        shell: bash
+        run: |
+          set -eux
+          # Require the runner is ubuntu-24.04
+          test "$(. /usr/lib/os-release && echo "${ID}-${VERSION_ID}")" = "ubuntu-24.04"
+          # resolute is the next release. The azure.archive.ubuntu.com mirror only carries amd64.
+          # Other architectures like arm64 use ports.ubuntu.com/ubuntu-ports.
+          if [ "$(dpkg --print-architecture)" = "amd64" ]; then
+            mirror="http://azure.archive.ubuntu.com/ubuntu"
+          else
+            mirror="http://ports.ubuntu.com/ubuntu-ports"
+          fi
+          echo "deb ${mirror} resolute universe main" | sudo tee /etc/apt/sources.list.d/resolute.list
+          /bin/time -f '%E %C' sudo apt update
+          # skopeo is currently older in resolute for some reason hence --allow-downgrades
+          /bin/time -f '%E %C' sudo apt install -y --allow-downgrades crun/resolute podman/resolute
+          podman --version
 
       - name: Fetch Build Outputs
         if: inputs.publish
@@ -337,72 +337,48 @@ jobs:
           merge-multiple: true
           path: /tmp/artifacts
 
-      - name: Load Outputs
-        if: inputs.publish
-        shell: bash
-        id: load-outputs
-        run: |
-          set -x
-          OUTCSV="$(mktemp)"
-          for digest_file in /tmp/artifacts/*.txt; do
-            # Extract the platform from the file name
-            PLATFORM="$(basename "${digest_file}" ".txt" | sed 's/.*-//g')"
-            IMAGE_NAME="$(basename "${digest_file}" ".txt" | grep -Po ".*-" | sed 's/-$//')"
-            DIGEST="$(< "${digest_file}")"
-            echo "${PLATFORM},${IMAGE_NAME},${DIGEST}" | tee -a "${OUTCSV}"
-          done
-          echo "OUTPUT_CSV=$(base32 -w 0 < "${OUTCSV}")" | tee -a "${GITHUB_OUTPUT}"
-
-      - name: Login to GitHub Container Registry
-        if: inputs.publish
-        env:
-          REGISTRY: ghcr.io
-        run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | podman login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login -u "${{ github.actor }}" --password-stdin "${REGISTRY}"
-
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
-        if: github.event_name != 'pull_request'
-
       - name: Publish manifest with unified architecture and sign
         shell: bash
         if: inputs.publish
         env:
-          COSIGN_EXPERIMENTAL: false
-          COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
+          SIGNING_SECRET: ${{ secrets.SIGNING_SECRET }}
           LABELS: ${{ steps.metadata.outputs.labels }}
-          OUTPUT_CSV: ${{ steps.load-outputs.outputs.OUTPUT_CSV }}
           TAGS: ${{ steps.metadata.outputs.tags }}
         run: |
           set -x
 
-          OUTPUT_CSV_FILE="$(mktemp)"
-          echo "${OUTPUT_CSV}" | base32 -d | tee "${OUTPUT_CSV_FILE}"
+          PRIVATE_KEY_FILE="$(mktemp)"
+          echo "${SIGNING_SECRET}" > "${PRIVATE_KEY_FILE}"
+          trap 'rm -f $PRIVATE_KEY_FILE' EXIT
+          sudo mkdir -p "/etc/containers/registries.d/"
+          echo -e "docker:\n  ${IMAGE_REGISTRY}:\n    use-sigstore-attachments: true" | sudo tee "/etc/containers/registries.d/${REPOSITORY_OWNER}.yaml"
 
-          # This is insanely dumb, please PR if you have a better solution ~ @tulilirockz :3c
-          IMAGES=$(cat "${OUTPUT_CSV_FILE}" | while IFS=$'\n' read -r ENTRY ; do echo "${ENTRY}" | cut -d, -f2 ; done | sort | uniq | tr "\n" " " | sed 's/.$//')
-          for TARGET_IMAGE in ${IMAGES} ; do
+          for digest_file in /tmp/artifacts/*.txt; do
+            # Extract the platform from the file name
+            TARGET_PLATFORM="$(basename "${digest_file}" ".txt" | sed 's/.*-//g')"
+            TARGET_IMAGE="$(basename "${digest_file}" ".txt" | grep -Po ".*-" | sed 's/-$//')"
+            TARGET_DIGEST="$(< "${digest_file}")"
+
             TARGET_MANIFEST="${IMAGE_REGISTRY}/${TARGET_IMAGE}"
-            podman manifest create "${TARGET_MANIFEST}"
+            if ! podman images | grep -F -e "${TARGET_MANIFEST}" ; then
+              podman manifest create "${TARGET_MANIFEST}"
+            fi
 
-            PLATFORMS=$(grep -F -e "${IMAGE}" "${OUTPUT_CSV_FILE}" | while IFS=$'\n' read -r ENTRY ; do echo "${ENTRY}" | cut -d, -f1 ; done | sort | uniq | tr "\n" " " | sed 's/.$//')
-            for TARGET_PLATFORM in ${PLATFORMS} ; do
-              TARGET_DIGEST="$(grep -F -e ",${TARGET_IMAGE}," "${OUTPUT_CSV_FILE}" | grep -F -e "${TARGET_PLATFORM}" | cut -d, -f3 | tr -d "\n")"
-              podman manifest add "${TARGET_MANIFEST}" "${TARGET_MANIFEST}@${TARGET_DIGEST}" --arch "${TARGET_PLATFORM}"
-            done
+            podman manifest add "${TARGET_MANIFEST}" "${TARGET_MANIFEST}@${TARGET_DIGEST}" --arch "${TARGET_PLATFORM}"
+          done
 
+          # We want one per image instead
+          for digest_file in $(find /tmp/artifacts/*.txt | cut -f1 -d- | uniq); do
+            TARGET_IMAGE="$(basename "${digest_file}")"
+            TARGET_MANIFEST="${IMAGE_REGISTRY}/${TARGET_IMAGE}"
             while IFS= read -r LABEL; do
               podman manifest annotate --index --annotation "${LABEL}" "${TARGET_MANIFEST}"
             done <<< "${LABELS}"
-
             # HACK: push two times so layer annotations are present
             # TODO: remove me when https://github.com/containers/podman/issues/27796 fixed
             for _ in $(seq 2); do
               while IFS= read -r TAG; do
-                podman manifest push --all=false --digestfile=/tmp/digestfile "${TARGET_MANIFEST}" "${TARGET_MANIFEST}:${TAG}"
+                podman manifest push --all=false --compression-format=zstd "${TARGET_MANIFEST}" "${TARGET_MANIFEST}:${TAG}" "--sign-passphrase-file=/dev/null" "--sign-by-sigstore-private-key=${PRIVATE_KEY_FILE}"
               done <<< "${TAGS}"
             done
-
-            cosign sign -y --new-bundle-format=false --use-signing-config=false --key env://COSIGN_PRIVATE_KEY "${TARGET_MANIFEST}@$(< /tmp/digestfile)"
           done
