@@ -34,7 +34,7 @@ ostree-rechunk:
           -t \
           -v /var/lib/containers:/var/lib/containers \
           "quay.io/centos-bootc/centos-bootc:stream10" \
-          /usr/libexec/bootc-base-imagectl rechunk --max-layers 120 \
+          /usr/libexec/bootc-base-imagectl rechunk --max-layers 127 \
           "{{image}}" \
           "{{image}}" || exit 1
 
@@ -62,7 +62,7 @@ rechunk:
     IMG="{{ image }}"
     # podman pull $IMG # image must be available locally
     export CHUNKAH_CONFIG_STR="$(sudo podman inspect "${IMG}")"
-    podman run --rm "--mount=type=image,src=${IMG},dest=/chunkah" -e CHUNKAH_CONFIG_STR quay.io/jlebon/chunkah build --label ostree.bootable=1 --compressed --max-layers 67 | \
+    podman run --rm "--mount=type=image,src=${IMG},dest=/chunkah" -e CHUNKAH_CONFIG_STR quay.io/coreos/chunkah build --label ostree.bootable=1 --compressed --max-layers 128 | \
         podman load | \
         sort -n | \
         head -n1 | \
