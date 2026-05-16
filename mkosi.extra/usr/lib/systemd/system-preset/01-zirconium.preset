@@ -1,6 +1,6 @@
 disable systemd-timesyncd.service
+disable bootc-fetch-apply-updates.timer
 enable auditd.service
-enable bootc-fetch-apply-updates.timer
 enable brew-setup.service
 enable firewalld.service
 enable flatpak-add-flathub-repos.service
