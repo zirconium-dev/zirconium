@@ -120,23 +120,17 @@ update-greeter:
 # Turn automatic updates on or off
 toggle-updates ACTION="prompt":
     #!/usr/bin/bash
-    CURRENT_STATE="disabled"
-    if systemctl cat -- uupd.timer &> /dev/null; then
-        TIMER="uupd.timer"
-    else
-        TIMER="rpm-ostreed-automatic.timer"
-    fi
-    CURRENT_STATE="$(systemctl is-enabled "${TIMER}")"
+    CURRENT_STATE="$(systemctl is-enabled uupd.timer)"
 
     if [ "${CURRENT_STATE}" == "enabled" ] ; then
         if gum confirm --default=no "Would you like to disable automatic updates?" ; then
-            sudo systemctl enable "$TIMER"
-            echo "Updates have been enabled"
+            sudo systemctl disable uupd.timer
+            echo "Updates have been disabled"
         fi
     else
         if gum confirm --default=yes "Would you like to enable automatic updates?" ; then
-            sudo systemctl disable "$TIMER"
-            echo "Updates have been disabled"
+            sudo systemctl enable uupd.timer
+            echo "Updates have been enabled"
         fi
     fi
 
