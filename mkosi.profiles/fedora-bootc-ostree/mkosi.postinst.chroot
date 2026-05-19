@@ -3,7 +3,7 @@
 set -xeuo pipefail
 
 # Automatic updates without rebooting the system all the time
-sed -i 's|#AutomaticUpdatePolicy.*|AutomaticUpdatePolicy=stage|' /etc/rpm-ostreed.conf
+sed -i 's|#AutomaticUpdatePolicy.*|AutomaticUpdatePolicy=none|' /etc/rpm-ostreed.conf
 sed -i 's|#LockLayering.*|LockLayering=true|' /etc/rpm-ostreed.conf
 
 # For rootless podman
