@@ -24,7 +24,7 @@ jobs:
     uses: ./.github/workflows/reusable-build-bootc.yaml
     secrets: inherit
     with:
-      image-name: zirconium
+      image-name: reiconium
       platforms: amd64,arm64
       default-tag: rawhide
       release: rawhide
