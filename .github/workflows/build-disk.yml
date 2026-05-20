@@ -9,7 +9,7 @@ jobs:
   build_release:
     name: Build and release disk image
     permissions:
-      contents: read
+      contents: write
       packages: read
       id-token: write
     timeout-minutes: 60
@@ -95,20 +95,22 @@ jobs:
           (cd ${SOURCE_DIR} && sha256sum "${IMAGE_NAME}${FLAVOR}-${PLATFORM}.iso" | sudo tee "${IMAGE_NAME}${FLAVOR}-${PLATFORM}.iso-CHECKSUM")
           sudo rm -f "${SOURCE_DIR}/zirc-unbranded.iso"
 
-      - name: Upload to S3
+      - name: Upload to GitHub Release
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         shell: bash
         env:
-          RCLONE_CONFIG_S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
-          RCLONE_CONFIG_S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
-          RCLONE_CONFIG_S3_PROVIDER: ${{ secrets.S3_PROVIDER }}
-          RCLONE_CONFIG_S3_REGION: ${{ secrets.S3_REGION }}
-          RCLONE_CONFIG_S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
-          RCLONE_CONFIG_S3_TYPE: s3
-          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
           SOURCE_DIR: ${{ steps.build-iso.outputs.output-directory }}
         run: |
-          sudo apt update -y
-          sudo apt install -y rclone
-          rclone copy "${SOURCE_DIR}"/*.iso "S3:${S3_BUCKET_NAME}"
-          rclone copy "${SOURCE_DIR}"/*.iso-CHECKSUM "S3:${S3_BUCKET_NAME}"
+          set -euo pipefail
+          TAG="iso-$(date -u +%Y.%m.%d)"
+          # Idempotent: create release if missing; matrix jobs race here, so
+          # ignore the "already exists" failure on the loser.
+          gh release create "$TAG" \
+            --title "ISO build $TAG" \
+            --notes "Automated ISO build for $TAG" \
+            2>/dev/null || true
+          gh release upload "$TAG" --clobber \
+            "${SOURCE_DIR}"/*.iso \
+            "${SOURCE_DIR}"/*.iso-CHECKSUM
