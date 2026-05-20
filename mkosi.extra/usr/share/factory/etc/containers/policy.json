@@ -20,19 +20,6 @@
                     "keyPath": "/etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release"
                 }
             ],
-            "ghcr.io/zirconium-dev": [
-                {
-                    "type": "sigstoreSigned",
-                    "keyPaths": [
-                        "/usr/share/pki/containers/zirconium.pub",
-                        "/usr/share/pki/containers/jackrabbit.pub",
-                        "/usr/share/pki/containers/hawaii.pub"
-                    ],
-                    "signedIdentity": {
-                        "type": "matchRepository"
-                    }
-                }
-            ],
             "": [
                 {
                     "type": "insecureAcceptAnything"
