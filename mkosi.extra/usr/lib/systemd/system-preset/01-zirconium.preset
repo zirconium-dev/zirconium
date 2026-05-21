@@ -1,5 +1,6 @@
 disable systemd-timesyncd.service
 disable bootc-fetch-apply-updates.timer
+disable sshd.socket
 disable sshd.service
 enable auditd.service
 enable brew-setup.service
