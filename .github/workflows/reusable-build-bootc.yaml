@@ -31,11 +31,6 @@ on:
         required: false
         type: boolean
         default: true
-      cleanup_action:
-        description: "Use cleanup action from ublue to get more storage on CI"
-        required: false
-        type: boolean
-        default: false
       profiles:
         description: "Extra mkosi profiles to use"
         required: false
@@ -93,13 +88,13 @@ jobs:
       matrix: ${{fromJson(needs.generate_matrix.outputs.matrix)}}
     runs-on: ${{ matrix.platform == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
     steps:
-      - name: Mount BTRFS for podman storage
-        if: matrix.platform != 'arm64' && inputs.cleanup_action
-        uses: ublue-os/container-storage-action@dc1f4c8f17b672069e921f001132f7cf98a423a6
-        continue-on-error: true
+      - name: Free disk space
+        if: matrix.platform != 'arm64'
+        uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
         with:
-          target-dir: /var/lib/containers
-          mount-opts: compress-force=zstd:2
+          exclude: |
+            /opt/hostedtoolcache/Python
+          skip-if-available: "80G"
 
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
