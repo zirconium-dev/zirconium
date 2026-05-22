@@ -160,6 +160,11 @@ jobs:
           set -e
           sudo env IMAGE_FULL="localhost/${IMAGE_NAME}:${DEFAULT_TAG}" "$(which just)" load
 
+      - name: Cleanup after loading the image
+        run: |
+          sudo mkosi clean
+          sudo rm -rf mkosi.tools/
+
       - name: Rechunk image
         run: |
           set -e
