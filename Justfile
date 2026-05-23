@@ -24,7 +24,7 @@ lint:
 
 load:
     #!/usr/bin/env bash
-    set -x
+    set -xeuo pipefail
     podman load -i "$(find mkosi.output/* -maxdepth 0 -type d -printf "%T@ ,%p\n" -iname "_*" -print0 | sort -n | head -n1 | cut -d, -f2)" -q | cut -d: -f3 | xargs -I{} podman tag {} {{image}}
 
 ostree-rechunk:
