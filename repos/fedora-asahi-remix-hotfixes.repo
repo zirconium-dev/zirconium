@@ -1,0 +1,11 @@
+[fedora-asahi-remix-hotfixes]
+name=Fedora Asahi Remix Hotfixes
+baseurl=https://fedora-asahi-remix.org/repos/hotfixes/$releasever/
+type=rpm-md
+skip_if_unavailable=True
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-$releasever-$basearch
+repo_gpgcheck=0
+enabled=1
+enabled_metadata=1
+priority=1
