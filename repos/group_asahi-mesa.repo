@@ -1,0 +1,10 @@
+[copr:copr.fedorainfracloud.org:group_asahi:mesa]
+name=Copr repo for mesa owned by @asahi
+baseurl=https://download.copr.fedorainfracloud.org/results/@asahi/mesa/fedora-$releasever-$basearch/
+type=rpm-md
+skip_if_unavailable=False
+gpgcheck=0
+repo_gpgcheck=0
+enabled=1
+enabled_metadata=1
+priority=5

@@ -1,0 +1,10 @@
+[copr:copr.fedorainfracloud.org:group_asahi:fedora-remix-scripts]
+name=Copr repo for fedora-remix-scripts owned by @asahi
+baseurl=https://download.copr.fedorainfracloud.org/results/@asahi/fedora-remix-scripts/fedora-$releasever-$basearch/
+type=rpm-md
+skip_if_unavailable=False
+gpgcheck=0
+repo_gpgcheck=0
+enabled=1
+enabled_metadata=1
+priority=5
