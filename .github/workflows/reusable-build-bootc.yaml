@@ -126,6 +126,7 @@ jobs:
       - name: Install dependencies for build
         run: |
           set -x
+          sudo apt update -y
           sudo apt install -y --no-install-recommends bubblewrap debian-archive-keyring python3-gpg python3-hawkey python3-libcomps python3-unbound
           git clone https://github.com/systemd/mkosi.git
           sudo mv mkosi /usr/src/mkosi
