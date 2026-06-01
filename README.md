@@ -1,4 +1,4 @@
-This is a fork with some modicifations of Zirconium. The biggest change is the inclusion of Ghostyy as a terminal.
+This is a fork with some modification of Zirconium. The biggest change is the inclusion of Ghostyy as a terminal.
 
 # Zirconium
 ***Do you like how I dance? I've got Zirconium pants!***
