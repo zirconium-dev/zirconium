@@ -99,7 +99,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
-          submodules: true
+          submodules: recursive
+
+      - name: Verify submodules populated
+        run: |
+          set -e
+          test -f mkosi.extra/usr/share/zirconium/zdots/dot_config/niri/config.kdl \
+            || { echo "::error::zdots submodule is empty — niri/DMS dotfiles would be missing from the image"; exit 1; }
+          test -f mkosi.extra/usr/share/zirconium/zdots/dot_config/DankMaterialShell/settings.json \
+            || { echo "::error::zdots submodule is missing DankMaterialShell config"; exit 1; }
 
       - name: Setup Just
         uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
@@ -261,7 +269,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
-          submodules: true
+          submodules: recursive
 
         # This generates a timestamp like what is defined on the ArtifactHub documentation
         # E.G: 2022-02-08T15:38:15Z'

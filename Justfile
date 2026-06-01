@@ -13,10 +13,14 @@ default:
 
 build: build-ostree
 
-build-ostree:
+# Ensure dotfiles (zdots) and other submodules are checked out before building
+submodules:
+    git submodule update --init --recursive
+
+build-ostree: submodules
     mkosi -B --debug --profile=bootc-ostree
 
-build-sysupdate:
+build-sysupdate: submodules
     mkosi -B --debug --profile=sysupdate
 
 lint:
