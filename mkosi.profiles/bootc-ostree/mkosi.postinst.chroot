@@ -13,6 +13,7 @@ rm -rf /home /root /usr/local /srv /opt /mnt /usr/local /boot
 mkdir -p /boot /var /sysroot/ostree
 ln -s sysroot/ostree /ostree
 ln -sT var/home /home
+ln -sT run/media /media
 ln -sT var/mnt /mnt
 ln -sT var/opt /opt
 ln -sT var/roothome /root
