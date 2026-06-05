@@ -9,7 +9,7 @@ bootupctl backend generate-update-metadata
 # Necessary for general behavior expected by image-based systems
 sed -i 's|^HOME=.*|HOME=/var/home|' "/etc/default/useradd"
 
-rm -rf /home /root /usr/local /srv /opt /mnt /usr/local /boot
+rm -rf /home /root /usr/local /srv /opt /mnt /usr/local /boot /media
 mkdir -p /boot /var /sysroot/ostree
 ln -s sysroot/ostree /ostree
 ln -sT var/home /home
