@@ -284,14 +284,14 @@ jobs:
             io.artifacthub.package.license=${{ env.IMAGE_LICENSE }}
             io.artifacthub.package.logo-url=${{ env.IMAGE_LOGO_URL }}
             io.artifacthub.package.prerelease=false
-            io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/${{ github.sha }}/README.md
+            io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/zirconium/${{ github.sha }}/README.md
             org.opencontainers.image.created=${{ steps.date.outputs.date }}
             org.opencontainers.image.description=${{ env.IMAGE_DESC }}
-            org.opencontainers.image.documentation=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/${{ github.sha }}/README.md
+            org.opencontainers.image.documentation=https://raw.githubusercontent.com/${{ github.repository_owner }}/zirconium/${{ github.sha }}/README.md
             org.opencontainers.image.licenses=${{ env.IMAGE_LICENSE }}
-            org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/commit/${{ github.sha }}
+            org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/zirconium/commit/${{ github.sha }}
             org.opencontainers.image.title=${{ env.IMAGE_NAME }}
-            org.opencontainers.image.url=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/tree/${{ github.sha }}
+            org.opencontainers.image.url=https://github.com/${{ github.repository_owner }}/zirconium/tree/${{ github.sha }}
             org.opencontainers.image.vendor=${{ github.repository_owner }}
             org.opencontainers.image.version=${{ env.DEFAULT_TAG }}.{{date 'YYYYMMDD'}}
 
@@ -346,13 +346,13 @@ jobs:
           sudo mkdir -p "/etc/containers/registries.d/"
           echo -e "docker:\n  ${IMAGE_REGISTRY}:\n    use-sigstore-attachments: true" | sudo tee "/etc/containers/registries.d/${REPOSITORY_OWNER}.yaml"
 
+          TARGET_MANIFEST="${IMAGE_REGISTRY}/${IMAGE_NAME}"
+
           for digest_file in /tmp/artifacts/*.txt; do
             # Extract the platform from the file name
             TARGET_PLATFORM="$(basename "${digest_file}" ".txt" | sed 's/.*-//g')"
-            TARGET_IMAGE="$(basename "${digest_file}" ".txt" | grep -Po ".*-" | sed 's/-$//')"
             TARGET_DIGEST="$(< "${digest_file}")"
 
-            TARGET_MANIFEST="${IMAGE_REGISTRY}/${TARGET_IMAGE}"
             if ! podman images | grep -F -e "${TARGET_MANIFEST}" ; then
               podman manifest create "${TARGET_MANIFEST}"
             fi
@@ -362,8 +362,6 @@ jobs:
 
           # We want one per image instead
           for digest_file in $(find /tmp/artifacts/*.txt | cut -f1 -d- | uniq); do
-            TARGET_IMAGE="$(basename "${digest_file}")"
-            TARGET_MANIFEST="${IMAGE_REGISTRY}/${TARGET_IMAGE}"
             while IFS= read -r LABEL; do
               podman manifest annotate --index --annotation "${LABEL}" "${TARGET_MANIFEST}"
             done <<< "${LABELS}"
