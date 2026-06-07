@@ -284,14 +284,14 @@ jobs:
             io.artifacthub.package.license=${{ env.IMAGE_LICENSE }}
             io.artifacthub.package.logo-url=${{ env.IMAGE_LOGO_URL }}
             io.artifacthub.package.prerelease=false
-            io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/zirconium/${{ github.sha }}/README.md
+            io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/README.md
             org.opencontainers.image.created=${{ steps.date.outputs.date }}
             org.opencontainers.image.description=${{ env.IMAGE_DESC }}
-            org.opencontainers.image.documentation=https://raw.githubusercontent.com/${{ github.repository_owner }}/zirconium/${{ github.sha }}/README.md
+            org.opencontainers.image.documentation=https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/README.md
             org.opencontainers.image.licenses=${{ env.IMAGE_LICENSE }}
-            org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/zirconium/commit/${{ github.sha }}
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}/commit/${{ github.sha }}
             org.opencontainers.image.title=${{ env.IMAGE_NAME }}
-            org.opencontainers.image.url=https://github.com/${{ github.repository_owner }}/zirconium/tree/${{ github.sha }}
+            org.opencontainers.image.url=https://github.com/${{ github.repository }}/tree/${{ github.sha }}
             org.opencontainers.image.vendor=${{ github.repository_owner }}
             org.opencontainers.image.version=${{ env.DEFAULT_TAG }}.{{date 'YYYYMMDD'}}
 
