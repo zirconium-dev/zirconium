@@ -60,13 +60,9 @@ disk-image $filesystem=filesystem:
 rechunk $image_name=image:
     #!/usr/bin/env bash
     export CHUNKAH_CONFIG_STR="$(podman inspect "${image_name}")"
-    podman run --rm "--mount=type=image,src=${image_name},target=/chunkah" -e CHUNKAH_CONFIG_STR quay.io/coreos/chunkah build --prune /sysroot/ --label ostree.final-diffid- --label ostree.commit- --label containers.bootc=1 --max-layers 128 | \
-        podman load | \
-        sort -n | \
-        head -n1 | \
-        cut -d, -f2 | \
-        cut -d: -f3 | \
-        xargs -I{} podman tag {} "${image_name}"
+    podman run --rm "--mount=type=image,src=${image_name},target=/chunkah" \
+        -e CHUNKAH_CONFIG_STR quay.io/coreos/chunkah build --prune /sysroot/ \
+        --compressed --max-layers 128 --tag "${image_name}" | podman load
 
 clean:
     mkosi clean
