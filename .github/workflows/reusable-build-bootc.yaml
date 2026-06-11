@@ -56,7 +56,7 @@ env:
 
 jobs:
   generate_matrix:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
@@ -82,7 +82,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.generate_matrix.outputs.matrix) }}
-    runs-on: ${{ matrix.platform == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
+    runs-on: ${{ matrix.platform == 'amd64' && 'ubuntu-26.04' || 'ubuntu-26.04-arm' }}
     steps:
       - name: Free disk space
         uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
@@ -95,27 +95,6 @@ jobs:
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           submodules: true
-
-      # We need newer podman due to old podman not supporting lots of flags
-      - name: Update podman
-        shell: bash
-        run: |
-          set -eux
-          # Require the runner is ubuntu-24.04
-          IDV=$(. /usr/lib/os-release && echo ${ID}-${VERSION_ID})
-          test "${IDV}" = "ubuntu-24.04"
-          # resolute is the next release. The azure.archive.ubuntu.com mirror only carries amd64.
-          # Other architectures like arm64 use ports.ubuntu.com/ubuntu-ports.
-          if [ "$(dpkg --print-architecture)" = "amd64" ]; then
-            mirror="http://azure.archive.ubuntu.com/ubuntu"
-          else
-            mirror="http://ports.ubuntu.com/ubuntu-ports"
-          fi
-          echo "deb ${mirror} resolute universe main" | sudo tee /etc/apt/sources.list.d/resolute.list
-          /bin/time -f '%E %C' sudo apt update
-          # skopeo is currently older in resolute for some reason hence --allow-downgrades
-          /bin/time -f '%E %C' sudo apt install -y --allow-downgrades crun/resolute buildah/resolute podman/resolute skopeo/resolute just/resolute
-          podman --version
 
       - name: Install dependencies for build
         run: |
@@ -214,7 +193,7 @@ jobs:
 
   manifest:
     name: Create Manifest
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     if: always()
     needs:
       - build_push
@@ -302,25 +281,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_ACTOR: ${{ github.actor }}
         run: echo "${GITHUB_TOKEN}" | podman login -u "${GITHUB_ACTOR}" --password-stdin "${REGISTRY}"
-
-      - name: Update podman
-        shell: bash
-        run: |
-          set -eux
-          # Require the runner is ubuntu-24.04
-          test "$(. /usr/lib/os-release && echo "${ID}-${VERSION_ID}")" = "ubuntu-24.04"
-          # resolute is the next release. The azure.archive.ubuntu.com mirror only carries amd64.
-          # Other architectures like arm64 use ports.ubuntu.com/ubuntu-ports.
-          if [ "$(dpkg --print-architecture)" = "amd64" ]; then
-            mirror="http://azure.archive.ubuntu.com/ubuntu"
-          else
-            mirror="http://ports.ubuntu.com/ubuntu-ports"
-          fi
-          echo "deb ${mirror} resolute universe main" | sudo tee /etc/apt/sources.list.d/resolute.list
-          /bin/time -f '%E %C' sudo apt update
-          # skopeo is currently older in resolute for some reason hence --allow-downgrades
-          /bin/time -f '%E %C' sudo apt install -y --allow-downgrades crun/resolute podman/resolute
-          podman --version
 
       - name: Fetch Build Outputs
         if: inputs.publish
