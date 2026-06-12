@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -ouex pipefail
+
+cd /tmp
+otb_tag=$(curl -s "https://api.github.com/repos/OpenTabletDriver/OpenTabletDriver/releases/latest" | jq -r '.tag_name')
+git clone https://github.com/opentabletdriver/opentabletdriver --branch ${otb_tag} && cd opentabletdriver
+
+otb_install_dir=/usr/lib/opentabletdriver-config
+install -Dm0644 <(./generate-rules.sh) ${otb_install_dir}/udev/rules.d/70-opentabletdriver.rules
+install -Dm0644 eng/bash/Generic/usr/lib/modprobe.d/99-opentabletdriver.conf -t ${otb_install_dir}/modprobe.d
+install -Dm0644 eng/bash/Generic/usr/lib/modules-load.d/opentabletdriver.conf -t ${otb_install_dir}/modules-load.d

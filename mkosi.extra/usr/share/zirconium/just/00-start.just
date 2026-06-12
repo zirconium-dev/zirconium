@@ -216,3 +216,32 @@ generate-bug-report:
     EOF
 
     gzip -9c $REPORT_DATA | base64 | fpaste -t "zirconium report $(date +%Y%m%d%H%M%S)" --private=1
+
+# Toggles OpenTabletDriver configs (You will only be able to configure your art tablet in OpenTabletDriver, not in your desktop's settings)
+toggle-opentabletdriver:
+    #!/bin/bash
+    if stat /etc/.otb-toggled &>/dev/null; then
+        sudo unlink /etc/udev/rules.d/70-opentabletdriver.rules
+        sudo unlink /etc/modprobe.d/99-opentabletdriver.conf
+        sudo unlink /etc/modules-load.d/opentabletdriver.conf
+        sudo rm /etc/.otb-toggled
+        echo "Disabled OpenTabletDriver."
+    else
+        set -euo pipefail
+
+        if ! flatpak info net.opentabletdriver.OpenTabletDriver &>/dev/null; then
+            if gum confirm "Would you like to install OpenTabletDriver from Flathub?" ; then
+                flatpak install net.opentabletdriver.OpenTabletDriver
+            fi
+        fi
+
+        sudo ln -sf /usr/lib/opentabletdriver-config/udev/rules.d/70-opentabletdriver.rules /etc/udev/rules.d/70-opentabletdriver.rules
+        sudo ln -sf /usr/lib/opentabletdriver-config/modprobe.d/99-opentabletdriver.conf /etc/modprobe.d/99-opentabletdriver.conf
+        sudo ln -sf /usr/lib/opentabletdriver-config/modules-load.d/opentabletdriver.conf /etc/modules-load.d/opentabletdriver.conf
+        sudo touch /etc/.otb-toggled
+        echo "Enabled OpenTabletDriver."
+
+        if gum confirm --default="no" "Reboot your computer to apply changes?" ; then
+            reboot
+        fi
+    fi
