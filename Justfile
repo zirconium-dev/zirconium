@@ -61,8 +61,10 @@ rechunk $image_name=image:
     #!/usr/bin/env bash
     export CHUNKAH_CONFIG_STR="$(podman inspect "${image_name}")"
     podman run --rm "--mount=type=image,src=${image_name},target=/chunkah" \
-        -e CHUNKAH_CONFIG_STR quay.io/coreos/chunkah build --prune /sysroot/ \
-        --label containers.bootc=1 --max-layers 128 --tag "${image_name}" | podman load
+        -e CHUNKAH_CONFIG_STR quay.io/coreos/chunkah build \
+        --prune /sysroot/ --label containers.bootc=1 \
+        --compressed --max-layers 128 --tag "${image_name}" \
+        | podman load
 
 clean:
     mkosi clean
