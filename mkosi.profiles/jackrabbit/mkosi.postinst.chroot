@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+set -xeuo pipefail
+
+# ensuring the default kernel isn't being pulled in
+for pkg in kernel kernel-core kernel-devel-matched kernel-devel kernel-modules kernel-modules-core kernel-modules-extra; do
+  rpm --erase $pkg --nodeps
+done
+
+rm -rfv /usr/lib/modules/*
+
+rpm -ivh --force "${SRCDIR}/cache/linux-ogc/kernel-{[0-9],core,modules,devel}*.rpm" --nodeps --noscripts
+
+rpm -qi mesa-filesystem | grep -F -e "Terra"
+rpm -qa | grep -v -E "^gamescope" &> /dev/null
+
+KERNEL_VERSION="$(find "/usr/lib/modules" -maxdepth 1 -type d ! -path "/usr/lib/modules" -exec basename '{}' ';' | sort | tail -n 1)"
+
+dkms install -m "xonedo/$(basename "$(find /usr/src -iname "*xonedo*" -type d)" | cut -f2 -d-)" -k "${KERNEL_VERSION}"
+depmod -a "${KERNEL_VERSION}"
+
+stat "/usr/lib/modules/${KERNEL_VERSION}"/extra/xone*.ko* # We actually need the kernel objects after build LOL
+
+sed -i -f - /usr/lib/os-release <<EOF
+s|^NAME=.*|NAME=\"Zirconium Jackrabbit\"|
+s|^PRETTY_NAME=.*|PRETTY_NAME=\"Zirconium Jackrabbit\"|
+EOF
+
+KERNEL_PATH="$(find /usr/lib/modules -maxdepth 1 -type d | grep -v -E "*.img" | tail -n 1)"
+dracut --force "${KERNEL_PATH}/initramfs.img" --kver "$(basename "${KERNEL_PATH}")"
+
+bootupctl backend generate-update-metadata
+
+echo 'import "/usr/share/zirconium/just/67-gamerslop.just"' >> /usr/share/zirconium/just/00-start.just

@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+set -xeuo pipefail
+
+mkdir -p "${SRCDIR}/cache"
+
+if [ ! -e "${SRCDIR}/cache/oras" ] ; then
+	ORAS_VERSION="$(curl -fsSL https://api.github.com/repos/oras-project/oras/releases/latest| jq -rc .tag_name)"
+	ORAS_URL="$(curl -fsSL https://api.github.com/repos/oras-project/oras/releases/latest  | jq -rc --arg tag_name "${ORAS_VERSION#v}" --arg arch "$(arch | sed "s/aarch/arm/;s/x86_64/amd64/")" '.assets[] | select(.name=="oras_" + $tag_name + "_linux_" + $arch + ".tar.gz") | .browser_download_url')"
+	curl -fsSLo /dev/stdout "${ORAS_URL}"	| tar -xvzf - -C "${SRCDIR}/cache" --owner=0 --group=0 --no-same-owner --no-same-permissions oras
+fi
+
+if [ ! -e "${SRCDIR}/cache/linux-ogc" ] ; then
+	"${SRCDIR}/cache/oras" pull ghcr.io/opengamingcollective/kernel-packages-fedora:latest-fc44
+	mkdir -p "${SRCDIR}/cache/linux-ogc"
+	mv *.rpm "${SRCDIR}/cache/linux-ogc/"
+fi
+
