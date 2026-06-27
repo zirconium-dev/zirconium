@@ -58,6 +58,8 @@ jobs:
   generate_matrix:
     runs-on: ubuntu-26.04
     outputs:
+      image_version: ${{ steps.getversion.outputs.image_version }}
+    outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Set matrix
@@ -104,6 +106,10 @@ jobs:
           sudo mv mkosi /usr/src/mkosi
           sudo ln -sf "/usr/src/mkosi/bin/mkosi" /usr/bin/mkosi
 
+      - name: Set mkosi.version
+        # We need to do this because mkosi.version is not persistent between builds on CI
+        run: skopeo list-tags docker://${IMAGE_REGISTRY}/${IMAGE_NAME} | jq --arg date "$(date -u +%Y%m%d)" -r '.Tags[] | select(startswith($date+"."))' | sort -n | tail -1 > mkosi.version
+
       - name: Render configuration (for debugging)
         run: mkosi cat-config --debug
 
@@ -120,6 +126,12 @@ jobs:
             RELEASE_ARGUMENTS+=("--release=$CI_MKOSI_RELEASE")
           fi
           sudo mkosi -B -ff --debug --profile=bootc-ostree,${CI_MKOSI_PROFILES} ${PROFILE_ARGUMENTS} ${RELEASE_ARGUMENTS}
+
+      - name: Get Version
+        id: getversion
+        run: |
+          set -e
+          echo "image_version=$(cat mkosi.version)" >> "$GITHUB_OUTPUT"
 
       - name: Load image
         id: load
@@ -249,11 +261,11 @@ jobs:
             type=raw,value=${{ steps.imagemetadata.outputs.distributionversion }}
             type=raw,value=${{ env.DEFAULT_TAG }}-${{ github.sha }}
             type=raw,value=${{ steps.imagemetadata.outputs.distributionversion }}-${{ github.sha }}
-            type=raw,value=${{ env.DEFAULT_TAG }}.{{date 'YYYYMMDD'}}
-            type=raw,value=${{ steps.imagemetadata.outputs.distributionversion }}.{{date 'YYYYMMDD'}}
-            type=raw,value=${{ env.DEFAULT_TAG }}.{{date 'YYYYMMDD'}}-${{ github.sha }}
-            type=raw,value=${{ steps.imagemetadata.outputs.distributionversion }}.{{date 'YYYYMMDD'}}-${{ github.sha }}
-            type=raw,value={{ date 'YYYYMMDD'}},enable=${{ env.DEFAULT_TAG == 'latest' }}
+            type=raw,value=${{ env.DEFAULT_TAG }}.${{ needs.build_push.outputs.image_version }}
+            type=raw,value=${{ steps.imagemetadata.outputs.distributionversion }}.${{ needs.build_push.outputs.image_version }}
+            type=raw,value=${{ env.DEFAULT_TAG }}.${{ needs.build_push.outputs.image_version }}-${{ github.sha }}
+            type=raw,value=${{ steps.imagemetadata.outputs.distributionversion }}.${{ needs.build_push.outputs.image_version }}-${{ github.sha }}
+            type=raw,value=${{ needs.build_push.outputs.image_version }},enable=${{ env.DEFAULT_TAG == 'latest' }}
             type=ref,event=pr
             type=sha,enable=${{ github.event_name == 'pull_request' }}
           labels: |
@@ -272,7 +284,7 @@ jobs:
             org.opencontainers.image.title=${{ env.IMAGE_NAME }}
             org.opencontainers.image.url=https://github.com/${{ github.repository }}/tree/${{ github.sha }}
             org.opencontainers.image.vendor=${{ github.repository_owner }}
-            org.opencontainers.image.version=${{ env.DEFAULT_TAG }}.{{date 'YYYYMMDD'}}
+            org.opencontainers.image.version=${{ env.DEFAULT_TAG }}.${{ needs.build_push.outputs.image_version }}
 
       - name: Login to GitHub Container Registry
         if: inputs.publish
