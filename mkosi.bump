@@ -1,4 +1,26 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env python
+from datetime import datetime, timezone
 
-date -u +%Y%m%d%H%M%S
+DEFAULT_INDEX=0
+
+cur_date = datetime.now(timezone.utc).strftime("%Y%m%d")
+old_date = None
+old_index = 0
+
+# Try to find the old version. If the file is missing or fails to parse, don't do anything
+try:
+    old_version = open("mkosi.version", "r").read().split(".")
+    if len(old_version) == 2:
+        old_date = old_version[0]
+        old_index = int(old_version[1])
+
+except FileNotFoundError, ValueError:
+    pass
+
+# If the date timestamp (YYYYMMDD) of the last built version is the same as the one we want to build, increment the counter index. If not, reset to 0
+if old_date != cur_date:
+    print(f"{cur_date}.{DEFAULT_INDEX}")
+else:
+    new_index = old_index + 1
+    print(f"{cur_date}.{new_index}")
+
