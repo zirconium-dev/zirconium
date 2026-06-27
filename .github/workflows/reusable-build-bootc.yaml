@@ -58,8 +58,6 @@ jobs:
   generate_matrix:
     runs-on: ubuntu-26.04
     outputs:
-      image_version: ${{ steps.getversion.outputs.image_version }}
-    outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Set matrix
@@ -85,6 +83,8 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJson(needs.generate_matrix.outputs.matrix) }}
     runs-on: ${{ matrix.platform == 'amd64' && 'ubuntu-26.04' || 'ubuntu-26.04-arm' }}
+    outputs:
+      image_version: ${{ steps.getversion.outputs.image_version }}
     steps:
       - name: Free disk space
         uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
