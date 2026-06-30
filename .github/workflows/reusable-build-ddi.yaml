@@ -1,0 +1,296 @@
+---
+name: Build DDI
+on:
+  workflow_call:
+    inputs:
+      image-name:
+        description: "The name of the image to build"
+        required: true
+        type: string
+      image-desc:
+        description: "The description of the image to build"
+        required: false
+        type: string
+      default-tag:
+        description: "Default tag to push to"
+        required: false
+        type: string
+        default: "latest"
+      platforms:
+        description: "The platforms to build the image for"
+        required: false
+        type: string
+        default: "amd64,arm64"
+      publish:
+        description: "Publish this image"
+        required: false
+        type: boolean
+        default: true
+      profiles:
+        description: "Extra mkosi profiles to use"
+        required: false
+        type: string
+        default: ""
+      release:
+        description: "Release to build for"
+        required: false
+        type: string
+
+env:
+  DEFAULT_TAG: "${{ inputs.default-tag }}"
+  IMAGE_DESC: "Opinionated niri + bootc image"
+  IMAGE_KEYWORDS: "sysupdate,niri"
+  IMAGE_LICENSE: AGPL-2.0
+  IMAGE_LOGO_URL: "https://avatars.githubusercontent.com/u/237492973?s=400&v=4"
+  IMAGE_NAME: "${{ inputs.image-name }}"
+  IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}/${{ inputs.image-name }}/"
+
+jobs:
+  generate_matrix:
+    runs-on: ubuntu-26.04
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Set matrix
+        id: set-matrix
+        env:
+          PLATFORMS: "${{ inputs.platforms }}"
+        run: |
+          MATRIX="{\"include\":[]}"
+          for platform in $(tr ',' ' ' <<< "${PLATFORMS}") ; do
+            MATRIX="$(jq -c ".include += [{\"platform\": \"${platform}\"}]" <<< "${MATRIX}")"
+          done
+          echo "matrix=${MATRIX}" >> $GITHUB_OUTPUT
+
+  build_push:
+    name: Build and push image
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    timeout-minutes: 60
+    needs: generate_matrix
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.generate_matrix.outputs.matrix) }}
+    runs-on: ${{ matrix.platform == 'amd64' && 'ubuntu-26.04' || 'ubuntu-26.04-arm' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          submodules: true
+
+      - name: Install MKOSI and support unprivileged builds
+        run: |
+          set -x
+          sudo apt install -y --no-install-recommends bubblewrap debian-archive-keyring python3-gpg python3-hawkey python3-libcomps python3-unbound just
+          git clone https://github.com/systemd/mkosi.git
+          sudo mv mkosi /usr/src/mkosi
+          sudo ln -sf "/usr/src/mkosi/bin/mkosi" /usr/bin/mkosi
+
+      - name: Render configuration (for debugging)
+        run: mkosi cat-config --debug
+
+      - name: Build image
+        env:
+          CI_MKOSI_PROFILES: ${{ inputs.profiles }}
+          CI_MKOSI_RELEASE: ${{ inputs.release }}
+          IMAGE_FULL: localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
+        run: |
+          set -e
+          RELEASE_ARGUMENTS=()
+          if [ "$CI_MKOSI_RELEASE" != "" ] ; then
+            RELEASE_ARGUMENTS+=("--release=$CI_MKOSI_RELEASE")
+          fi
+          sudo mkosi -B -ff --debug --profile=sysupdate,${CI_MKOSI_PROFILES} ${PROFILE_ARGUMENTS} ${RELEASE_ARGUMENTS}
+          sudo chown $USER:$USER -R mkosi.output
+
+      - name: Install ORAS
+        if: inputs.publish
+        uses: oras-project/setup-oras@38de303aac69abb66f3e6255b7198bff35f323e3 # v2.0.0
+
+      - name: Login to GitHub Container Registry
+        if: inputs.publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+        run: oras login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin <<< "${GITHUB_TOKEN}"
+
+      - name: Push to GHCR
+        if: inputs.publish
+        id: push
+        env:
+          IMAGE_DIGEST: ${{ steps.load.outputs.digest }}
+          MAX_RETRIES: 3
+          PLATFORM: ${{ matrix.platform }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: |
+          set -x
+
+          OUTPUT_DIRECTORY="/tmp/outputs/digests"
+          mkdir -p "${OUTPUT_DIRECTORY}"
+          pushd mkosi.output/
+          trap 'popd' EXIT
+          SYSTEMD_ARCH="$(uname -m | tr '_' '-')"
+          for COMPONENT in usr usr-verity usr-verity-sig ; do
+            oras push "${IMAGE_REGISTRY}/${COMPONENT}:${DEFAULT_TAG}" "${IMAGE_NAME^}_"*"_${SYSTEMD_ARCH}.${COMPONENT}-${SYSTEMD_ARCH}"*".raw" --format json | jq -rc .digest | tee "${OUTPUT_DIRECTORY}/${IMAGE_NAME}_${COMPONENT}_${PLATFORM}.txt"
+          done
+          oras push "${IMAGE_REGISTRY}/uki:${DEFAULT_TAG}" "${IMAGE_NAME^}_"*"_${SYSTEMD_ARCH}.efi" --format json | jq -rc .digest | tee "${OUTPUT_DIRECTORY}/${IMAGE_NAME}_uki_${PLATFORM}.txt"
+
+      - name: Upload Output Artifacts
+        if: inputs.publish
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ${{ env.IMAGE_NAME }}-${{ matrix.platform }}
+          retention-days: 1
+          if-no-files-found: error
+          path: |
+            /tmp/outputs/digests/*.txt
+
+  manifest:
+    name: Create Manifest
+    runs-on: ubuntu-26.04
+    if: always()
+    needs:
+      - build_push
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - name: Exit on failure
+        shell: bash
+        env:
+          JOBS: ${{ toJson(needs) }}
+        run: |
+          for i in $(jq -r 'to_entries[] | .value.result' <<< "${JOBS}"); do
+            if [ "$i" != "success" ] && [ "$i" != "skipped" ]; then
+              echo "Status check not okay!"
+              exit 1
+            fi
+          done
+
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+        # This generates a timestamp like what is defined on the ArtifactHub documentation
+        # E.G: 2022-02-08T15:38:15Z'
+        # https://artifacthub.io/docs/topics/repositories/container-images/
+        # https://linux.die.net/man/1/date
+      - name: Get current date
+        id: date
+        run:
+          set -xeuo pipefail
+          echo "date=$(date -u +%Y\-%m\-%d\T%H\:%M\:%S\Z)" >> "${GITHUB_OUTPUT}"
+
+      - name: Get mkosi metadata
+        id: imagemetadata
+        env:
+          MANUAL_RELEASE: ${{ inputs.release }}
+        run: |
+          set -xeuo pipefail
+          if [ "$MANUAL_RELEASE" != "" ] ; then
+            echo "distributionversion=${MANUAL_RELEASE}" >> "${GITHUB_OUTPUT}"
+          else
+            echo "distributionversion=$(grep "Release=" mkosi.conf | cut -d= -f2)" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Image Metadata
+        uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6
+        if: inputs.publish
+        id: metadata
+        with:
+          tags: |
+            type=raw,value=${{ env.DEFAULT_TAG }}
+            type=raw,value=${{ steps.imagemetadata.outputs.distributionversion }}
+            type=raw,value=${{ env.DEFAULT_TAG }}-${{ github.sha }}
+            type=raw,value=${{ steps.imagemetadata.outputs.distributionversion }}-${{ github.sha }}
+            type=raw,value=${{ env.DEFAULT_TAG }}.{{date 'YYYYMMDD'}}
+            type=raw,value=${{ steps.imagemetadata.outputs.distributionversion }}.{{date 'YYYYMMDD'}}
+            type=raw,value=${{ env.DEFAULT_TAG }}.{{date 'YYYYMMDD'}}-${{ github.sha }}
+            type=raw,value=${{ steps.imagemetadata.outputs.distributionversion }}.{{date 'YYYYMMDD'}}-${{ github.sha }}
+            type=raw,value={{ date 'YYYYMMDD'}},enable=${{ env.DEFAULT_TAG == 'latest' }}
+            type=ref,event=pr
+            type=sha,enable=${{ github.event_name == 'pull_request' }}
+          labels: |
+            sysupdatechungus.version=1
+            io.artifacthub.package.deprecated=false
+            io.artifacthub.package.keywords=${{ env.IMAGE_KEYWORDS }}
+            io.artifacthub.package.license=${{ env.IMAGE_LICENSE }}
+            io.artifacthub.package.logo-url=${{ env.IMAGE_LOGO_URL }}
+            io.artifacthub.package.prerelease=false
+            io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/README.md
+            org.opencontainers.image.created=${{ steps.date.outputs.date }}
+            org.opencontainers.image.description=${{ env.IMAGE_DESC }}
+            org.opencontainers.image.documentation=https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/README.md
+            org.opencontainers.image.licenses=${{ env.IMAGE_LICENSE }}
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}/commit/${{ github.sha }}
+            org.opencontainers.image.title=${{ env.IMAGE_NAME }}
+            org.opencontainers.image.url=https://github.com/${{ github.repository }}/tree/${{ github.sha }}
+            org.opencontainers.image.vendor=${{ github.repository_owner }}
+            org.opencontainers.image.version=${{ env.DEFAULT_TAG }}.{{date 'YYYYMMDD'}}
+
+      - name: Install ORAS
+        if: inputs.publish
+        uses: oras-project/setup-oras@38de303aac69abb66f3e6255b7198bff35f323e3 # v2.0.0
+
+      - name: Login to GitHub Container Registry
+        if: inputs.publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+        run: oras login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin <<< "${GITHUB_TOKEN}"
+
+      - name: Fetch Build Outputs
+        if: inputs.publish
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: ${{ env.IMAGE_NAME }}-*
+          merge-multiple: true
+          path: /tmp/artifacts
+
+      - name: Publish manifest with unified architecture
+        shell: bash
+        if: inputs.publish
+        env:
+          LABELS: ${{ steps.metadata.outputs.labels }}
+          TAGS: ${{ steps.metadata.outputs.tags }}
+        run: |
+          set -x
+
+          oras index "${IMAGE_REGISTRY}" tag1 tag2 dgst2 --subject tag3 | oras manifest push -
+
+
+          PRIVATE_KEY_FILE="$(mktemp)"
+          echo "${SIGNING_SECRET}" > "${PRIVATE_KEY_FILE}"
+          trap 'rm -f $PRIVATE_KEY_FILE' EXIT
+          sudo mkdir -p "/etc/containers/registries.d/"
+          echo -e "docker:\n  ${IMAGE_REGISTRY}:\n    use-sigstore-attachments: true" | sudo tee "/etc/containers/registries.d/${REPOSITORY_OWNER}.yaml"
+
+          TARGET_MANIFEST="${IMAGE_REGISTRY}/${IMAGE_NAME}"
+
+          for digest_file in /tmp/artifacts/*.txt; do
+            # Extract the platform from the file name
+            TARGET_PLATFORM="$(basename "${digest_file}" ".txt" | sed 's/.*-//g')"
+            TARGET_DIGEST="$(< "${digest_file}")"
+
+            if ! podman images | grep -F -e "${TARGET_MANIFEST}" ; then
+              podman manifest create "${TARGET_MANIFEST}"
+            fi
+
+            podman manifest add "${TARGET_MANIFEST}" "${TARGET_MANIFEST}@${TARGET_DIGEST}" --arch "${TARGET_PLATFORM}"
+          done
+
+          # We want one per image instead
+          for digest_file in $(find /tmp/artifacts/*.txt | cut -f1 -d- | uniq); do
+            while IFS= read -r LABEL; do
+              podman manifest annotate --index --annotation "${LABEL}" "${TARGET_MANIFEST}"
+            done <<< "${LABELS}"
+            # HACK: push two times so layer annotations are present
+            # TODO: remove me when https://github.com/containers/podman/issues/27796 fixed
+            for _ in $(seq 2); do
+              while IFS= read -r TAG; do
+                podman manifest push --all=false --compression-format=zstd "${TARGET_MANIFEST}" "${TARGET_MANIFEST}:${TAG}" "--sign-passphrase-file=/dev/null" "--sign-by-sigstore-private-key=${PRIVATE_KEY_FILE}"
+              done <<< "${TAGS}"
+            done
+          done
