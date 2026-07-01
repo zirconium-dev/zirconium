@@ -14,10 +14,13 @@ default:
 build: build-ostree
 
 build-ostree:
-    mkosi -B --debug --profile=bootc-ostree
+    mkosi -B --debug --profile=bootc-ostree,brew
 
 build-sysupdate:
-    mkosi -B --debug --profile=sysupdate
+    mkosi -B --debug --profile=sysupdate,brew
+
+build-iso:
+    mkosi -B --debug --profile=iso
 
 lint:
     podman run --rm -it --entrypoint=bootc {{ image }} container lint
