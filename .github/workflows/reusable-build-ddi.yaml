@@ -43,7 +43,7 @@ env:
   IMAGE_LICENSE: AGPL-2.0
   IMAGE_LOGO_URL: "https://avatars.githubusercontent.com/u/237492973?s=400&v=4"
   IMAGE_NAME: "${{ inputs.image-name }}"
-  IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}/${{ inputs.image-name }}/"
+  IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}/${{ inputs.image-name }}"
 
 jobs:
   generate_matrix:
@@ -98,9 +98,8 @@ jobs:
         env:
           CI_MKOSI_PROFILES: ${{ inputs.profiles }}
           CI_MKOSI_RELEASE: ${{ inputs.release }}
-          IMAGE_FULL: localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
         run: |
-          set -e
+          set -xeo pipefail
           RELEASE_ARGUMENTS=()
           if [ "$CI_MKOSI_RELEASE" != "" ] ; then
             RELEASE_ARGUMENTS+=("--release=$CI_MKOSI_RELEASE")
@@ -128,7 +127,7 @@ jobs:
           PLATFORM: ${{ matrix.platform }}
           REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: |
-          set -x
+          set -xeuo pipefail
 
           OUTPUT_DIRECTORY="/tmp/outputs/digests"
           mkdir -p "${OUTPUT_DIRECTORY}"
@@ -136,7 +135,7 @@ jobs:
           trap 'popd' EXIT
           SYSTEMD_ARCH="$(uname -m | tr '_' '-')"
           for COMPONENT in usr usr-verity usr-verity-sig ; do
-            oras push "${IMAGE_REGISTRY}/${COMPONENT}:${DEFAULT_TAG}" "${IMAGE_NAME^}_"*"_${SYSTEMD_ARCH}.${COMPONENT}-${SYSTEMD_ARCH}"*".raw" --format json | jq -rc .digest | tee "${OUTPUT_DIRECTORY}/${IMAGE_NAME}_${COMPONENT}_${PLATFORM}.txt"
+            oras push "${IMAGE_REGISTRY}/${COMPONENT}-${PLATFORM}:${DEFAULT_TAG}" "${IMAGE_NAME^}_"*"_${SYSTEMD_ARCH}.${COMPONENT}-${SYSTEMD_ARCH}"*".raw" --format json | jq -rc .digest | tee "${OUTPUT_DIRECTORY}/${IMAGE_NAME}_${COMPONENT}_${PLATFORM}.txt"
           done
           oras push "${IMAGE_REGISTRY}/uki:${DEFAULT_TAG}" "${IMAGE_NAME^}_"*"_${SYSTEMD_ARCH}.efi" --format json | jq -rc .digest | tee "${OUTPUT_DIRECTORY}/${IMAGE_NAME}_uki_${PLATFORM}.txt"
 
@@ -258,42 +257,11 @@ jobs:
         env:
           LABELS: ${{ steps.metadata.outputs.labels }}
           TAGS: ${{ steps.metadata.outputs.tags }}
+          PLATFORM: ${{ matrix.platform }}
         run: |
           set -x
 
-          oras index "${IMAGE_REGISTRY}" tag1 tag2 dgst2 --subject tag3 | oras manifest push -
-
-
-          PRIVATE_KEY_FILE="$(mktemp)"
-          echo "${SIGNING_SECRET}" > "${PRIVATE_KEY_FILE}"
-          trap 'rm -f $PRIVATE_KEY_FILE' EXIT
-          sudo mkdir -p "/etc/containers/registries.d/"
-          echo -e "docker:\n  ${IMAGE_REGISTRY}:\n    use-sigstore-attachments: true" | sudo tee "/etc/containers/registries.d/${REPOSITORY_OWNER}.yaml"
-
-          TARGET_MANIFEST="${IMAGE_REGISTRY}/${IMAGE_NAME}"
-
-          for digest_file in /tmp/artifacts/*.txt; do
-            # Extract the platform from the file name
-            TARGET_PLATFORM="$(basename "${digest_file}" ".txt" | sed 's/.*-//g')"
-            TARGET_DIGEST="$(< "${digest_file}")"
-
-            if ! podman images | grep -F -e "${TARGET_MANIFEST}" ; then
-              podman manifest create "${TARGET_MANIFEST}"
-            fi
-
-            podman manifest add "${TARGET_MANIFEST}" "${TARGET_MANIFEST}@${TARGET_DIGEST}" --arch "${TARGET_PLATFORM}"
-          done
-
-          # We want one per image instead
-          for digest_file in $(find /tmp/artifacts/*.txt | cut -f1 -d- | uniq); do
-            while IFS= read -r LABEL; do
-              podman manifest annotate --index --annotation "${LABEL}" "${TARGET_MANIFEST}"
-            done <<< "${LABELS}"
-            # HACK: push two times so layer annotations are present
-            # TODO: remove me when https://github.com/containers/podman/issues/27796 fixed
-            for _ in $(seq 2); do
-              while IFS= read -r TAG; do
-                podman manifest push --all=false --compression-format=zstd "${TARGET_MANIFEST}" "${TARGET_MANIFEST}:${TAG}" "--sign-passphrase-file=/dev/null" "--sign-by-sigstore-private-key=${PRIVATE_KEY_FILE}"
-              done <<< "${TAGS}"
-            done
+          for COMPONENT_RAW_NAME in /tmp/artifacts/*.txt ; do
+            COMPONENT="$(cut -d_ -f2 <<< "${COMPONTENT_RAW_NAME}")"
+            oras manifest index "${IMAGE_REGISTRY}/${IMAGE_NAME}/${COMPONENT}:${DEFAULT_TAG}" tag1 tag2 dgst2 --subject tag3 | oras manifest push -
           done
