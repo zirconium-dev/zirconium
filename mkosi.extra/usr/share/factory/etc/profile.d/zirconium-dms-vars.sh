@@ -1,1 +1,1 @@
-export DMS_PRIVESC=sudo
+export DMS_PRIVESC=run0
