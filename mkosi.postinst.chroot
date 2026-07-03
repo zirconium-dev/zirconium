@@ -32,11 +32,6 @@ stat /usr/share/zirconium/just/00-start.just
 # FIXME: wait until taidan gets this PR https://github.com/Ultramarine-Linux/taidan/pull/142/changes
 # stat /usr/bin/taidan
 # stat /usr/lib/systemd/system/taidan*.service
-stat /usr/lib/systemd/system/brew-setup.service
-stat /usr/share/homebrew.tar.zst
-stat /usr/lib/tmpfiles.d/homebrew.conf
-
-setfattr -n user.component -v "homebrew" /usr/share/homebrew.tar.zst
 
 HOME_URL="https://github.com/zirconium-dev/zirconium"
 echo "zirconium" | tee "/etc/hostname"
