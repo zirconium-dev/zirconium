@@ -91,6 +91,9 @@ jobs:
       - name: Render configuration (for debugging)
         run: mkosi cat-config --debug
 
+      - name: Generate Fake SecureBoot key
+        run: mkosi genkey # DO NOT USE THIS KEY - Do NOT! - This is supposed to be just for testing.
+
       - name: Build image
         env:
           CI_MKOSI_PROFILES: ${{ inputs.profiles }}
