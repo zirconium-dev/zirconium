@@ -134,10 +134,13 @@ jobs:
           pushd mkosi.output/
           trap 'popd' EXIT
           SYSTEMD_ARCH="$(uname -m | tr '_' '-')"
-          for COMPONENT in usr usr-verity usr-verity-sig ; do
-            oras push "${IMAGE_REGISTRY}/${COMPONENT}-${PLATFORM}:${DEFAULT_TAG}" "${IMAGE_NAME^}_"*"_${SYSTEMD_ARCH}.${COMPONENT}-${SYSTEMD_ARCH}"*".raw" --format json | jq -rc .digest | tee "${OUTPUT_DIRECTORY}/${IMAGE_NAME}_${COMPONENT}_${PLATFORM}.txt"
+          for COMPONENT in "" verity verity-sig ; do
+            if [ "${COMPONENT}" != "" ] ; then
+              COMPONENT="-${COMPONENT}"
+            fi
+            oras push "${IMAGE_REGISTRY}/usr${COMPONENT}:${DEFAULT_TAG}-${PLATFORM}" $(find . -iname "Zirconium_*_${SYSTEMD_ARCH}.usr-${SYSTEMD_ARCH}-${COMPONENT}*") --format json | jq -rc .digest | tee "${OUTPUT_DIRECTORY}/${IMAGE_NAME}_usr${COMPONENT}_${PLATFORM}.txt"
           done
-          oras push "${IMAGE_REGISTRY}/uki:${DEFAULT_TAG}" "${IMAGE_NAME^}_"*"_${SYSTEMD_ARCH}.efi" --format json | jq -rc .digest | tee "${OUTPUT_DIRECTORY}/${IMAGE_NAME}_uki_${PLATFORM}.txt"
+          oras push "${IMAGE_REGISTRY}/uki:${DEFAULT_TAG}-${PLATFORM}" "${IMAGE_NAME^}_"*".efi" --format json | jq -rc .digest | tee "${OUTPUT_DIRECTORY}/${IMAGE_NAME}_uki_${PLATFORM}.txt"
 
       - name: Upload Output Artifacts
         if: inputs.publish
