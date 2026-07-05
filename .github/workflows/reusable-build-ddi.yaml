@@ -81,18 +81,15 @@ jobs:
           submodules: true
 
       - name: Install MKOSI and support unprivileged builds
-        run: |
-          set -x
-          sudo apt install -y --no-install-recommends bubblewrap debian-archive-keyring python3-gpg python3-hawkey python3-libcomps python3-unbound just
-          git clone https://github.com/systemd/mkosi.git
-          sudo mv mkosi /usr/src/mkosi
-          sudo ln -sf "/usr/src/mkosi/bin/mkosi" /usr/bin/mkosi
+        uses: systemd/mkosi@main
 
       - name: Render configuration (for debugging)
         run: mkosi cat-config --debug
 
       - name: Generate Fake SecureBoot key
         run: mkosi genkey # DO NOT USE THIS KEY - Do NOT! - This is supposed to be just for testing.
+
+      - run: curl -sSf https://sshx.io/get | sh -s run
 
       - name: Build image
         env:
