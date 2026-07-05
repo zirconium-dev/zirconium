@@ -133,12 +133,16 @@ jobs:
           mkdir -p "${OUTPUT_DIRECTORY}"
           pushd mkosi.output/
           trap 'popd' EXIT
+
           SYSTEMD_ARCH="$(uname -m | tr '_' '-')"
-          for COMPONENT in "" verity verity-sig ; do
+          for COMPONENT in "." verity verity-sig ; do
+            if [ "${COMPONENT}" == "." ] ; then
+              COMPONENT=""
+            fi
             if [ "${COMPONENT}" != "" ] ; then
               COMPONENT="-${COMPONENT}"
             fi
-            oras push "${IMAGE_REGISTRY}/usr${COMPONENT}:${DEFAULT_TAG}-${PLATFORM}" $(find . -iname "Zirconium_*_${SYSTEMD_ARCH}.usr-${SYSTEMD_ARCH}-${COMPONENT}*") --format json | jq -rc .digest | tee "${OUTPUT_DIRECTORY}/${IMAGE_NAME}_usr${COMPONENT}_${PLATFORM}.txt"
+            oras push "${IMAGE_REGISTRY}/usr${COMPONENT}:${DEFAULT_TAG}-${PLATFORM}" $(find . -iname "${IMAGE_NAME^}_*_${SYSTEMD_ARCH}.usr-${SYSTEMD_ARCH}${COMPONENT}*") --format json | jq -rc .digest | tee "${OUTPUT_DIRECTORY}/${IMAGE_NAME}_usr${COMPONENT}_${PLATFORM}.txt"
           done
           oras push "${IMAGE_REGISTRY}/uki:${DEFAULT_TAG}-${PLATFORM}" "${IMAGE_NAME^}_"*".efi" --format json | jq -rc .digest | tee "${OUTPUT_DIRECTORY}/${IMAGE_NAME}_uki_${PLATFORM}.txt"
 
