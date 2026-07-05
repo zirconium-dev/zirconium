@@ -12,4 +12,3 @@ if [ ! -e "${SRCDIR}/cache/homebrew.tar.zst" ] ; then
 	mv "${SRCDIR}/cache/system_files/usr/share/homebrew.tar.zst" "${SRCDIR}/cache/homebrew.tar.zst"
 	rm -r "${SRCDIR}/cache/system_files"
 fi
-

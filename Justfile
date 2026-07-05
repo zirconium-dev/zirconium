@@ -14,7 +14,7 @@ default:
 build: build-ostree
 
 build-ostree:
-    mkosi -B --debug --profile=fedora-bootc-ostree,fedora-base-desktop,brew
+    mkosi -B --debug --profile=base,base-desktop,bootc-ostree,brew
 
 build-sysupdate:
     mkosi -B --debug --profile=sysupdate,brew

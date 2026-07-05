@@ -34,7 +34,7 @@ stat /usr/share/zirconium/just/00-start.just
 # stat /usr/lib/systemd/system/taidan*.service
 
 HOME_URL="https://github.com/zirconium-dev/zirconium"
-echo "zirconium" | tee "/etc/hostname"
+tee "/usr/share/factory/etc/hostname" <<< "zirconium"
 # OS Release File (changed in order with upstream)
 # TODO: change ANSI_COLOR
 sed -i -f - /usr/lib/os-release <<EOF
