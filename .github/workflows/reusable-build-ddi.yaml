@@ -80,7 +80,7 @@ jobs:
         with:
           submodules: true
 
-      - name: Install MKOSI and support unprivileged builds
+      - name: Install mkosi
         uses: systemd/mkosi@main
 
       - name: Render configuration (for debugging)
@@ -88,8 +88,6 @@ jobs:
 
       - name: Generate Fake SecureBoot key
         run: mkosi genkey # DO NOT USE THIS KEY - Do NOT! - This is supposed to be just for testing.
-
-      - run: curl -sSf https://sshx.io/get | sh -s run
 
       - name: Build image
         env:
@@ -101,8 +99,8 @@ jobs:
           if [ "$CI_MKOSI_RELEASE" != "" ] ; then
             RELEASE_ARGUMENTS+=("--release=$CI_MKOSI_RELEASE")
           fi
-          sudo mkosi -B -ff --debug --profile=sysupdate,base-desktop,${CI_MKOSI_PROFILES} ${PROFILE_ARGUMENTS} ${RELEASE_ARGUMENTS}
-          sudo chown $USER:$USER -R mkosi.output
+          mkosi -B -ff --debug --profile=base,base-desktop,sysupdate,brew,${CI_MKOSI_PROFILES} ${PROFILE_ARGUMENTS} ${RELEASE_ARGUMENTS}
+          chown $USER:$USER -R mkosi.output
 
       - name: Install ORAS
         if: inputs.publish
