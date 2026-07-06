@@ -43,7 +43,7 @@ env:
   IMAGE_LICENSE: AGPL-2.0
   IMAGE_LOGO_URL: "https://avatars.githubusercontent.com/u/237492973?s=400&v=4"
   IMAGE_NAME: "${{ inputs.image-name }}"
-  IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}/${{ inputs.image-name }}"
+  IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
 
 jobs:
   generate_matrix:
@@ -100,7 +100,6 @@ jobs:
             RELEASE_ARGUMENTS+=("--release=$CI_MKOSI_RELEASE")
           fi
           mkosi -B -ff --debug --profile=base,base-desktop,sysupdate,brew,${CI_MKOSI_PROFILES} ${PROFILE_ARGUMENTS} ${RELEASE_ARGUMENTS}
-          chown $USER:$USER -R mkosi.output
 
       - name: Install ORAS
         if: inputs.publish
@@ -129,6 +128,8 @@ jobs:
           pushd mkosi.output/
           trap 'popd' EXIT
 
+          TARGET_IMAGE_NAME="$(cut -f1 -d- <<< "${IMAGE_NAME}")"
+
           SYSTEMD_ARCH="$(uname -m | tr '_' '-')"
           for COMPONENT in "." verity verity-sig ; do
             if [ "${COMPONENT}" == "." ] ; then
@@ -137,9 +138,9 @@ jobs:
             if [ "${COMPONENT}" != "" ] ; then
               COMPONENT="-${COMPONENT}"
             fi
-            oras push "${IMAGE_REGISTRY}/usr${COMPONENT}:${DEFAULT_TAG}-${PLATFORM}" $(find . -iname "${IMAGE_NAME^}_*_${SYSTEMD_ARCH}.usr-${SYSTEMD_ARCH}${COMPONENT}*") --format json | jq -rc .digest | tee "${OUTPUT_DIRECTORY}/${IMAGE_NAME}_usr${COMPONENT}_${PLATFORM}.txt"
+            oras push --artifact-platform "linux/${PLATFORM}" "${IMAGE_REGISTRY}/${TARGET_IMAGE_NAME}/usr${COMPONENT}:${DEFAULT_TAG}-${PLATFORM}" $(find . -iname "${IMAGE_NAME^}_*_${SYSTEMD_ARCH}.usr-${SYSTEMD_ARCH}${COMPONENT}*") --format json | jq -rc .digest | tee "${OUTPUT_DIRECTORY}/${IMAGE_NAME}_usr${COMPONENT}_${PLATFORM}.txt"
           done
-          oras push "${IMAGE_REGISTRY}/uki:${DEFAULT_TAG}-${PLATFORM}" "${IMAGE_NAME^}_"*".efi" --format json | jq -rc .digest | tee "${OUTPUT_DIRECTORY}/${IMAGE_NAME}_uki_${PLATFORM}.txt"
+          oras push "${IMAGE_REGISTRY}/${TARGET_IMAGE_NAME}/uki:${DEFAULT_TAG}-${PLATFORM}" "${IMAGE_NAME^}_"*".efi" --format json | jq -rc .digest | tee "${OUTPUT_DIRECTORY}/${IMAGE_NAME}_uki_${PLATFORM}.txt"
 
       - name: Upload Output Artifacts
         if: inputs.publish
@@ -261,9 +262,11 @@ jobs:
           TAGS: ${{ steps.metadata.outputs.tags }}
           PLATFORM: ${{ matrix.platform }}
         run: |
-          set -x
+          set -xeo pipefail
 
-          for COMPONENT_RAW_NAME in /tmp/artifacts/*.txt ; do
-            COMPONENT="$(cut -d_ -f2 <<< "${COMPONTENT_RAW_NAME}")"
-            oras manifest index "${IMAGE_REGISTRY}/${IMAGE_NAME}/${COMPONENT}:${DEFAULT_TAG}" tag1 tag2 dgst2 --subject tag3 | oras manifest push -
+          TARGET_IMAGE_NAME="$(cut -f1 -d- <<< "${IMAGE_NAME}")"
+
+          for COMPONENT in $(find /tmp/artifacts/* -type f | cut -f2 -d_ | uniq) ; do
+            oras manifest index create "${IMAGE_REGISTRY}/${TARGET_IMAGE_NAME}/${COMPONENT}:${DEFAULT_TAG}" $(find "/tmp/artifacts/${IMAGE_NAME}_${COMPONENT}_"* | cut -d_ -f3 | cut -d. -f1 | uniq | xargs -I{} echo "${DEFAULT_TAG}-{}")
+            oras manifest index push "${TARGET_IMAGE_REGISTRY}/${IMAGE_NAME}/${COMPONENT}:${DEFAULT_TAG}"
           done
