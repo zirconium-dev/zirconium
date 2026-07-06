@@ -99,6 +99,9 @@ jobs:
       - name: Install mkosi
         uses: systemd/mkosi@main
 
+      - name: Install just
+        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3
+
       - name: Render configuration (for debugging)
         run: mkosi cat-config --debug
 
@@ -120,18 +123,18 @@ jobs:
         id: load
         run: |
           set -e
-          env IMAGE_FULL="localhost/${IMAGE_NAME}:${DEFAULT_TAG}" just load
+          env IMAGE_FULL="localhost/${IMAGE_NAME}:${DEFAULT_TAG}" $(which just) load
 
       - name: Rechunk image
         if: inputs.rechunk
         run: |
           set -e
-          env IMAGE_FULL="localhost/${IMAGE_NAME}:${DEFAULT_TAG}" just rechunk
+          env IMAGE_FULL="localhost/${IMAGE_NAME}:${DEFAULT_TAG}" $(which just) rechunk
 
       - name: Lint image
         run: |
           set -e
-          env IMAGE_FULL="localhost/${IMAGE_NAME}:${DEFAULT_TAG}" just lint
+          env IMAGE_FULL="localhost/${IMAGE_NAME}:${DEFAULT_TAG}" $(which just) lint
 
       - name: Login to GitHub Container Registry
         if: inputs.publish
