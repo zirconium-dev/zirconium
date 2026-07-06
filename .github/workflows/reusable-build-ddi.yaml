@@ -99,7 +99,8 @@ jobs:
           if [ "$CI_MKOSI_RELEASE" != "" ] ; then
             RELEASE_ARGUMENTS+=("--release=$CI_MKOSI_RELEASE")
           fi
-          mkosi -B -ff --debug --profile=base,base-desktop,sysupdate,brew,${CI_MKOSI_PROFILES} ${PROFILE_ARGUMENTS} ${RELEASE_ARGUMENTS}
+          # Privileged builds are required due to `sestatus` not being able to change labels while building if not (Operation Not Permitted(?))
+          sudo mkosi -B -ff --debug --profile=base,base-desktop,sysupdate,brew,${CI_MKOSI_PROFILES} ${PROFILE_ARGUMENTS} ${RELEASE_ARGUMENTS}
 
       - name: Install ORAS
         if: inputs.publish
@@ -140,7 +141,7 @@ jobs:
             fi
             oras push --artifact-platform "linux/${PLATFORM}" "${IMAGE_REGISTRY}/${TARGET_IMAGE_NAME}/usr${COMPONENT}:${DEFAULT_TAG}-${PLATFORM}" $(find . -iname "${IMAGE_NAME^}_*_${SYSTEMD_ARCH}.usr-${SYSTEMD_ARCH}${COMPONENT}*") --format json | jq -rc .digest | tee "${OUTPUT_DIRECTORY}/${IMAGE_NAME}_usr${COMPONENT}_${PLATFORM}.txt"
           done
-          oras push "${IMAGE_REGISTRY}/${TARGET_IMAGE_NAME}/uki:${DEFAULT_TAG}-${PLATFORM}" "${IMAGE_NAME^}_"*".efi" --format json | jq -rc .digest | tee "${OUTPUT_DIRECTORY}/${IMAGE_NAME}_uki_${PLATFORM}.txt"
+          oras push --artifact-platform "linux/${PLATFORM}" "${IMAGE_REGISTRY}/${TARGET_IMAGE_NAME}/uki:${DEFAULT_TAG}-${PLATFORM}" "${IMAGE_NAME^}_"*".efi" --format json | jq -rc .digest | tee "${OUTPUT_DIRECTORY}/${IMAGE_NAME}_uki_${PLATFORM}.txt"
 
       - name: Upload Output Artifacts
         if: inputs.publish
@@ -268,5 +269,4 @@ jobs:
 
           for COMPONENT in $(find /tmp/artifacts/* -type f | cut -f2 -d_ | uniq) ; do
             oras manifest index create "${IMAGE_REGISTRY}/${TARGET_IMAGE_NAME}/${COMPONENT}:${DEFAULT_TAG}" $(find "/tmp/artifacts/${IMAGE_NAME}_${COMPONENT}_"* | cut -d_ -f3 | cut -d. -f1 | uniq | xargs -I{} echo "${DEFAULT_TAG}-{}")
-            oras manifest index push "${TARGET_IMAGE_REGISTRY}/${IMAGE_NAME}/${COMPONENT}:${DEFAULT_TAG}"
           done
