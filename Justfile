@@ -1,7 +1,10 @@
 image := env("IMAGE_FULL", "localhost/zirconium:latest")
 filesystem := env("BUILD_FILESYSTEM", "btrfs")
 
-default:
+# iterate-sysupdate:
+#     vmbuddy -f mkosi.output/
+
+iterate-bootc:
     #!/usr/bin/env bash
     set -xeuo pipefail
     just build
@@ -17,7 +20,7 @@ build-ostree:
     mkosi -B --debug --profile=base,base-desktop,bootc-ostree,brew
 
 build-sysupdate:
-    mkosi -B --debug --profile=sysupdate,brew
+    mkosi -B --debug --profile=base,base-desktop,sysupdate,brew,base
 
 build-iso:
     mkosi -B --debug --profile=iso
