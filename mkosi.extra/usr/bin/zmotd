@@ -16,7 +16,7 @@ if test ! -e "${XDG_CONFIG_HOME:-$HOME/.config}/zirconium/no-show-user-motd" ; t
     ${slight_red} zjust zdots-update ${reset}             │ Update your unmodified dotfiles
     ${slight_red} zjust update-greeter ${reset}           │ Update your greeter with modifications from your current user
     ${slight_red} zjust reset-niri ${reset}               │ Reset niri to the default configuration
-    ${slight_red} sudo bootc update ${reset}              │ Manually update the system
+    ${slight_red} zjust update ${reset}                   │ Manually update the system
 
 EOF
 fi

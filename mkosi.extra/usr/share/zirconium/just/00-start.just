@@ -3,6 +3,15 @@ zdots_path := "/usr/share/zirconium/zdots"
 default:
     @zjust --choose
 
+# Simple wrapper over bootc/pompona for updating your system
+update:
+    #!/usr/bin/env bash
+    if [[ -e "/sysroot/ostree" || -e "/sysroot/composefs" ]] ; then
+        pkexec bootc upgrade
+    else
+        pompona-update
+    fi
+
 update-dotfiles:
     #!/usr/bin/env bash
     echo "Updating non-overwritten dotfiles to their latest in-image state"
