@@ -6,6 +6,5 @@ install -Dpm0644 -t /usr/share/ "${SRCDIR}/cache/homebrew.tar.zst"
 
 stat /usr/lib/systemd/system/brew-setup.service
 stat /usr/share/homebrew.tar.zst
-stat /usr/lib/tmpfiles.d/homebrew.conf
 
 setfattr -n user.component -v "homebrew" /usr/share/homebrew.tar.zst
