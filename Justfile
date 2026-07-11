@@ -5,10 +5,10 @@ default:
     #!/usr/bin/env bash
     set -xeuo pipefail
     just build
-    just load
-    just lint
-    just rechunk
-    env BUILD_BASE_DIR=/tmp just disk-image
+    sudo just load
+    sudo just lint
+    sudo just rechunk
+    sudo env BUILD_BASE_DIR=/tmp just disk-image
     vmbuddy -f /tmp/bootable.img
 
 build: build-ostree
