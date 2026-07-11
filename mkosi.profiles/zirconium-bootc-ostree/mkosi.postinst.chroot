@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+set -xeuo pipefail
+
+stat /usr/share/pki/containers/zirconium.pub
+stat /usr/share/pki/containers/jackrabbit.pub
+grep -F -e "ghcr.io/zirconium-dev" /usr/share/factory/etc/containers/policy.json

@@ -1,7 +1,6 @@
-disable systemd-timesyncd.service
-disable bootc-fetch-apply-updates.timer
-disable sshd.socket
 disable sshd.service
+disable sshd.socket
+disable systemd-timesyncd.service
 enable auditd.service
 enable firewalld.service
 enable flatpak-add-flathub-repos.service

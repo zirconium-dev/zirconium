@@ -9,7 +9,6 @@ niri --version | grep -i -E "niri [[:digit:]]*\.[[:digit:]]* (.*\.git\..*)"
 install -d /usr/share/zirconium/
 install -Dpm0644 -t /usr/lib/pam.d/ /usr/share/quickshell/dms/assets/pam/* # Fixes long login times on fingerprint auth
 sed --sandbox -i -e '/gnome_keyring.so/ s/-auth/auth/ ; /gnome_keyring.so/ s/-session/session/' /etc/pam.d/greetd
-echo 'source /usr/share/zirconium/shell/pure.bash' | tee -a "/etc/bashrc"
 install -d /usr/share/bash-completion/completions /usr/share/zsh/site-functions /usr/share/fish/vendor_completions.d/
 just --completions bash | sed -E 's/([\(_" ])just/\1zjust/g' > /usr/share/bash-completion/completions/zjust
 just --completions zsh | sed -E 's/([\(_" ])just/\1zjust/g' > /usr/share/zsh/site-functions/_zjust
@@ -18,14 +17,11 @@ just --completions fish | sed -E 's/([\(_" ])just/\1zjust/g' > /usr/share/fish/v
 fc-cache --force --really-force --system-only --verbose # recreate font-cache to pick up the added fonts
 
 # These files NEED to be on the image.
-grep -F -e "ghcr.io/zirconium-dev" /usr/share/factory/etc/containers/policy.json
 grep -F -e "Comment=Central repository of Flatpak applications" /usr/share/flatpak/remotes.d/flathub.flatpakrepo
 stat /usr/share/flatpak/remotes.d/flathub.flatpakrepo
-stat /usr/share/pki/containers/zirconium.pub
-stat /usr/share/pki/containers/jackrabbit.pub
 stat /usr/bin/luks*tpm*
 stat /usr/share/zirconium/just/00-start.just
-# FIXME: wait until taidan gets this PR https://github.com/Ultramarine-Linux/taidan/pull/142/changes
+# Not yet, needs a lot of fixes for sysupdate version
 # stat /usr/bin/taidan
 # stat /usr/lib/systemd/system/taidan*.service
 
