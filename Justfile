@@ -1,8 +1,14 @@
 image := env("IMAGE_FULL", "localhost/zirconium:latest")
+image_name := "zirconium"
 filesystem := env("BUILD_FILESYSTEM", "btrfs")
 
-# iterate-sysupdate:
-#     vmbuddy -f mkosi.output/
+iterate-sysupdate $IMAGE_NAME=image_name:
+    #!/usr/bin/env bash
+    # just build-sysupdate
+    set -x
+    LATEST_IMAGE="$(find mkosi.output -iname "${IMAGE_NAME^}_*_$(uname -m | tr '_' '-').raw" | tail -n-1)"
+    # qemu-img resize "${LATEST_IMAGE}" +40G
+    vmbuddy -f "${LATEST_IMAGE}"
 
 iterate-bootc:
     #!/usr/bin/env bash
@@ -17,10 +23,10 @@ iterate-bootc:
 build: build-ostree
 
 build-ostree:
-    mkosi -B --profile=base,base-desktop,bootc-ostree,brew
+    mkosi -B --debug-shell --profile=base,base-desktop,bootc-ostree,brew,zirconium-bootc-ostree
 
 build-sysupdate:
-    mkosi -B --profile=base,base-desktop,sysupdate,brew,base
+    mkosi -B --debug-shell --profile=base,base-desktop,sysupdate,brew,base --release=rawhide
 
 build-iso:
     mkosi -B --debug --profile=iso
