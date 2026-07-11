@@ -3,7 +3,6 @@ disable bootc-fetch-apply-updates.timer
 disable sshd.socket
 disable sshd.service
 enable auditd.service
-enable brew-setup.service
 enable firewalld.service
 enable flatpak-add-flathub-repos.service
 enable flatpak-preinstall.service
