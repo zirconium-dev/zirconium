@@ -1,0 +1,9 @@
+disable kmsconvt@tty1.service
+enable kmsconvt@tty2.service
+enable kmsconvt@tty3.service
+enable kmsconvt@tty4.service
+enable kmsconvt@tty5.service
+enable kmsconvt@tty6.service
+enable kmsconvt@tty7.service
+enable kmsconvt@tty8.service
+enable kmsconvt@tty9.service
