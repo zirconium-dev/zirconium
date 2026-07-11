@@ -1,1 +1,2 @@
+enable brew-proxy-setup.service
 enable brew-setup.service

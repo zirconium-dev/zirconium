@@ -1,2 +1,0 @@
-enable brew-proxy-daemon.service
-enable brew-proxy-setup.service
