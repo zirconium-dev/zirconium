@@ -6,9 +6,6 @@ install -Dpm0644 -t /usr/share/flatpak/remotes.d/ "$SRCDIR/cache/flathub.flatpak
 
 niri --version | grep -i -E "niri [[:digit:]]*\.[[:digit:]]* (.*\.git\..*)"
 
-# We don't want to have the fedora default here. KMSCON should be disabled where greetd is started
-sed -i "/.*kmsconvt@\.service/d" /usr/lib/systemd/system-preset/90-default.preset
-
 install -d /usr/share/zirconium/
 install -Dpm0644 -t /usr/lib/pam.d/ /usr/share/quickshell/dms/assets/pam/* # Fixes long login times on fingerprint auth
 sed --sandbox -i -e '/gnome_keyring.so/ s/-auth/auth/ ; /gnome_keyring.so/ s/-session/session/' /etc/pam.d/greetd
