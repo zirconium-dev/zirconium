@@ -53,7 +53,7 @@ DOCUMENTATION_URL="${HOME_URL}"
 DEFAULT_HOSTNAME="${IMAGE_NAME}"
 EOF
 
-    tee >/usr/lib/issue <<EOF
+    tee /usr/lib/issue <<EOF
 \e[0;38:2:252:186:3;1;49m▒\e[0m \e[0;38:2:252:186:3;1;49m⸭\e[0;38:2:252:186:3;49m ${IMAGE_NAME^} \e[0m
 \e[0;38:2:252:186:3;1;49m▒\e[0m Kernel \r on an \m (\l)
 
