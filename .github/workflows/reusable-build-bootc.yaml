@@ -126,7 +126,6 @@ jobs:
           env IMAGE_FULL="localhost/${IMAGE_NAME}:${DEFAULT_TAG}" $(which just) load
 
       - name: Rechunk image
-        if: inputs.rechunk
         run: |
           set -e
           env IMAGE_FULL="localhost/${IMAGE_NAME}:${DEFAULT_TAG}" $(which just) rechunk
