@@ -70,12 +70,27 @@ disk-image $filesystem=filesystem:
 
 rechunk $image_name=image:
     #!/usr/bin/env bash
-    export CHUNKAH_CONFIG_STR="$(podman inspect "${image_name}")"
+    set -eoux pipefail
+
+    CHUNKAH_OUTPUT_DIR="$(mktemp -d)"
+    CHUNKAH_CONFIG_FILE="$(mktemp)"
+
+    trap 'rm -f "${CHUNKAH_CONFIG_FILE}"; rm -rf "${CHUNKAH_OUTPUT_DIR}"' EXIT
+    podman inspect "${image_name}" > "${CHUNKAH_CONFIG_FILE}"
+
     podman run --rm "--mount=type=image,src=${image_name},target=/chunkah" \
-        -e CHUNKAH_CONFIG_STR quay.io/coreos/chunkah build \
+        -v "${CHUNKAH_CONFIG_FILE}:/chunkah-config.json:ro,Z" \
+        -v "${CHUNKAH_OUTPUT_DIR}:/run/out:Z" \
+        quay.io/coreos/chunkah:latest build \
+        --verbose \
+        --compressed \
         --prune /sysroot/ --label containers.bootc=1 \
-        --compressed --max-layers 128 --tag "${image_name}" \
-        | podman load
+        --max-layers 128 --tag "${image_name}" \
+        --config /chunkah-config.json \
+        --output oci:/run/out/chunked
+
+    CHUNKED_IMAGE="$(podman pull "oci:${CHUNKAH_OUTPUT_DIR}/chunked")"
+    podman tag "${CHUNKED_IMAGE}" "${image_name}"
 
 clean:
     mkosi clean
