@@ -21,11 +21,6 @@ on:
         required: false
         type: string
         default: "amd64,arm64"
-      rechunk:
-        description: "Rechunk the build"
-        required: false
-        type: boolean
-        default: true
       publish:
         description: "Publish this image"
         required: false
