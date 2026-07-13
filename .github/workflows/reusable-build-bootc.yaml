@@ -117,7 +117,7 @@ jobs:
           if [ "$CI_MKOSI_RELEASE" != "" ] ; then
             RELEASE_ARGUMENTS+=("--release=$CI_MKOSI_RELEASE")
           fi
-          mkosi -B -ff --debug --profile=base,base-desktop,bootc-ostree,brew,zirconium-bootc-ostree,${CI_MKOSI_PROFILES} ${PROFILE_ARGUMENTS} ${RELEASE_ARGUMENTS}
+          sudo mkosi -B -ff --debug --profile=base,base-desktop,bootc-ostree,brew,zirconium-bootc-ostree,${CI_MKOSI_PROFILES} ${PROFILE_ARGUMENTS} ${RELEASE_ARGUMENTS}
 
       - name: Load image
         id: load
