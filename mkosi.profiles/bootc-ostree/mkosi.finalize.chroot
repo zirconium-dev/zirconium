@@ -3,10 +3,11 @@ set -xeuo pipefail
 
 RPM_MUT_DB="/usr/lib/sysimage/rpm-ostree-base-db"
 RPM_DB="/usr/lib/sysimage/rpm"
+RPM_OSTREE_DB="/usr/share/rpm"
 
 mkdir -p "${RPM_MUT_DB}"
-mv -T "${RPM_DB}" /usr/share/rpm
-ln -srf "/usr/share/rpm" "${RPM_DB}"
+mv -T "${RPM_DB}" "${RPM_OSTREE_DB}"
+ln -srf "${RPM_OSTREE_DB}" "${RPM_DB}"
 
 # See: https://github.com/coreos/rpm-ostree/issues/4554
 # https://forge.fedoraproject.org/atomic/tracker/issues/82
