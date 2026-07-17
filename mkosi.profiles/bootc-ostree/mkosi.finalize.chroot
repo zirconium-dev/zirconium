@@ -1,7 +1,18 @@
 #!/bin/bash
 set -xeuo pipefail
 
-RPM_MUT_DB="/usr/lib/sysimage/rpm"
-RPM_OSTREE_DB="/usr/share/rpm"
-mkdir -p "$RPM_OSTREE_DB"
-rsync -av "$RPM_MUT_DB/" "$RPM_OSTREE_DB/" 1>&2 2>/dev/null
+RPM_MUT_DB="/usr/lib/sysimage/rpm-ostree-base-db"
+RPM_DB="/usr/lib/sysimage/rpm"
+
+mkdir -p "${RPM_MUT_DB}"
+mv -T "${RPM_DB}" /usr/share/rpm
+ln -srf "/usr/share/rpm" "${RPM_DB}"
+
+# See: https://github.com/coreos/rpm-ostree/issues/4554
+# https://forge.fedoraproject.org/atomic/tracker/issues/82
+for file in rpmdb.sqlite rpmdb.sqlite-shm rpmdb.sqlite-wal; do
+    target="${RPM_DB}/${file}"
+    link_path="${RPM_MUT_DB}/${file}"
+    # Note, this needs to be a hardlink, not a symbolic link.
+    ln -f "${target}" "${link_path}"
+done
