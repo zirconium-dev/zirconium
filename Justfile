@@ -4,6 +4,7 @@ filesystem := env("BUILD_FILESYSTEM", "btrfs")
 
 iterate-sysupdate $IMAGE_NAME=image_name:
     #!/usr/bin/env bash
+    set -xeuo pipefail
     just build-sysupdate
     LATEST_IMAGE="$(find mkosi.output -iname "${IMAGE_NAME^}_*_$(uname -m | tr '_' '-').raw" | tail -n-1)"
     qemu-img resize "${LATEST_IMAGE}" +40G
