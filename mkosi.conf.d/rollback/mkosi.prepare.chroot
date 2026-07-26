@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-
-set -xeuo pipefail
-
-mkdir -p "${SRCDIR}/cache"
-
-# Yay, bootc regression!
-curl -o "${SRCDIR}/cache/bootc.rpm" "https://kojipkgs.fedoraproject.org//packages/bootc/1.16.3/1.fc44/$(arch)/bootc-1.16.3-1.fc44.$(arch).rpm"

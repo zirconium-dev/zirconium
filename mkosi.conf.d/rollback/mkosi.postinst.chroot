@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-
-set -xeuo pipefail
-
-dnf swap -y --disablerepo=* bootc "$SRCDIR/cache/bootc.rpm"
