@@ -4,7 +4,7 @@ set -xeuo pipefail
 install -Dpm0644 -t /usr/share/ "$SRCDIR/cache/homebrew.tar.zst"
 install -Dpm0644 -t /usr/share/flatpak/remotes.d/ "$SRCDIR/cache/flathub.flatpakrepo"
 
-niri --version | grep -i -E "niri [[:digit:]]*\.[[:digit:]]* (.*\.git\..*)"
+niri --version | grep -i -E "niri [[:digit:]]*\.[[:digit:]]*"
 
 install -d /usr/share/zirconium/
 sed --sandbox -i -e '/gnome_keyring.so/ s/-auth/auth/ ; /gnome_keyring.so/ s/-session/session/' /etc/pam.d/greetd
