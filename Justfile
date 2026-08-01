@@ -26,7 +26,7 @@ build-ostree:
     mkosi -B --debug-shell --profile=base,base-desktop,bootc-ostree,brew,zirconium-bootc-ostree
 
 build-sysupdate:
-    mkosi -B --debug-shell --profile=base,base-desktop,sysupdate,brew,base
+    mkosi -B --debug-shell --profile=base,base-desktop,sysupdate,brew
 
 build-iso:
     mkosi -B --debug --profile=iso
@@ -86,8 +86,11 @@ rechunk $image_name=image:
         quay.io/coreos/chunkah:latest build \
         --verbose \
         --compressed \
-        --prune /sysroot/ --label containers.bootc=1 \
-        --max-layers 128 --tag "${image_name}" \
+        --prune /buildroot \
+        --prune /.cache \
+        --prune /afs \
+        --label containers.bootc=1 \
+        --max-layers 128 \
         --config /chunkah-config.json \
         --output oci:/run/out/chunked
 
