@@ -73,6 +73,11 @@ rechunk $image_name=image:
     #!/usr/bin/env bash
     set -eoux pipefail
 
+    # FIXME: Bandaid fix for
+    # https://github.com/zirconium-dev/zirconium/issues/363
+    # Do this properly in mkosi at some point
+    DATE="$(date -u +%Y\-%m\-%d\T%H\:%M\:%S\Z)"
+
     CHUNKAH_OUTPUT_DIR="$(mktemp -d)"
     CHUNKAH_CONFIG_FILE="$(mktemp)"
 
@@ -86,7 +91,8 @@ rechunk $image_name=image:
         quay.io/coreos/chunkah:latest build \
         --verbose \
         --compressed \
-        --prune /sysroot/ --label containers.bootc=1 \
+        --prune /sysroot/ \
+        --label org.opencontainers.image.created="${DATE}" \
         --max-layers 128 --tag "${image_name}" \
         --config /chunkah-config.json \
         --output oci:/run/out/chunked
