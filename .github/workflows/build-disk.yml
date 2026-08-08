@@ -21,14 +21,15 @@ jobs:
     runs-on: ${{ matrix.platform == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
 
     steps:
+      - name: Free disk space
+        uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
+        with:
+          skip-if-available: "64G"
+
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           submodules: true
-
-      - name: Maximize build space
-        if: inputs.platform != 'arm64'
-        uses: ublue-os/remove-unwanted-software@cc0becac701cf642c8f0a6613bbdaf5dc36b259e # v9
 
       - name: Build ISO
         id: build-iso
@@ -54,7 +55,7 @@ jobs:
 
       - name: Upload Artifact
         if: github.event_name == 'pull_request'
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: ${{ github.event.repository.name }}${{ matrix.flavor }}-${{ matrix.platform }}
           path: ${{ steps.build-iso.outputs.output-directory }}
@@ -92,7 +93,7 @@ jobs:
                 /output/zirc-unbranded.iso \
                 /output/zirc.iso'
           sudo mv "${SOURCE_DIR}"/zirc.iso "${SOURCE_DIR}/${IMAGE_NAME}${FLAVOR}-${PLATFORM}.iso"
-          sha256sum "${SOURCE_DIR}/${IMAGE_NAME}${FLAVOR}-${PLATFORM}.iso" | sudo tee "${SOURCE_DIR}/${IMAGE_NAME}${FLAVOR}-${PLATFORM}.iso-CHECKSUM"
+          (cd ${SOURCE_DIR} && sha256sum "${IMAGE_NAME}${FLAVOR}-${PLATFORM}.iso" | sudo tee "${IMAGE_NAME}${FLAVOR}-${PLATFORM}.iso-CHECKSUM")
           sudo rm -f "${SOURCE_DIR}/zirc-unbranded.iso"
 
       - name: Upload to S3

@@ -1,11 +1,11 @@
-[Flatpak Preinstall io.github.flattool.Ignition]
-Branch=stable
-IsRuntime=false
-
 [Flatpak Preinstall org.gnome.TextEditor]
 Branch=stable
 IsRuntime=false
 
 [Flatpak Preinstall io.github.kolunmi.Bazaar]
+Branch=stable
+IsRuntime=false
+
+[Flatpak Preinstall com.danklinux.dankcalendar]
 Branch=stable
 IsRuntime=false

@@ -2,9 +2,6 @@
 
 set -xeuo pipefail
 
-ls -la "${SRCDIR}/cache"
-rpm -i "${SRCDIR}/cache/*dkms-nvidia*.rpm" --noscripts --nodeps
-
 NVIDIA_VERSION="$(basename "$(find /usr/src -iname "*nvidia-*" -type d -maxdepth 1)" | cut -d- -f2)"
 
 # we need to override the `OUTPUTDIR` environment variable due to it being set by mkosi

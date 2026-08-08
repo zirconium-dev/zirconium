@@ -1,23 +1,35 @@
 image := env("IMAGE_FULL", "localhost/zirconium:latest")
+image_name := "zirconium"
 filesystem := env("BUILD_FILESYSTEM", "btrfs")
 
-default:
+iterate-sysupdate $IMAGE_NAME=image_name:
+    #!/usr/bin/env bash
+    set -xeuo pipefail
+    just build-sysupdate
+    LATEST_IMAGE="$(find mkosi.output -iname "${IMAGE_NAME^}_*_$(uname -m | tr '_' '-').raw" | tail -n-1)"
+    qemu-img resize "${LATEST_IMAGE}" +40G
+    vmbuddy -f "${LATEST_IMAGE}"
+
+iterate-bootc:
     #!/usr/bin/env bash
     set -xeuo pipefail
     just build
     sudo just load
     sudo just lint
-    sudo just ostree-rechunk
+    sudo just rechunk
     sudo env BUILD_BASE_DIR=/tmp just disk-image
     vmbuddy -f /tmp/bootable.img
 
 build: build-ostree
 
 build-ostree:
-    mkosi -B --debug --profile=bootc-ostree
+    mkosi -B --debug-shell --profile=base,base-desktop,bootc-ostree,brew,zirconium-bootc-ostree
 
 build-sysupdate:
-    mkosi -B --debug --profile=sysupdate
+    mkosi -B --debug-shell --profile=base,base-desktop,sysupdate,brew,base
+
+build-iso:
+    mkosi -B --debug --profile=iso
 
 lint:
     podman run --rm -it --entrypoint=bootc {{ image }} container lint
@@ -34,7 +46,7 @@ ostree-rechunk:
           -t \
           -v /var/lib/containers:/var/lib/containers \
           "quay.io/centos-bootc/centos-bootc:stream10" \
-          /usr/libexec/bootc-base-imagectl rechunk --max-layers 120 \
+          /usr/libexec/bootc-base-imagectl rechunk --max-layers 127 \
           "{{image}}" \
           "{{image}}" || exit 1
 
@@ -57,18 +69,35 @@ disk-image $filesystem=filesystem:
     fi
     just bootc install to-disk --generic-image --bootloader grub --via-loopback /data/bootable.img --filesystem "${filesystem}" --wipe
 
-rechunk:
+rechunk $image_name=image:
     #!/usr/bin/env bash
-    IMG="{{ image }}"
-    # podman pull $IMG # image must be available locally
-    export CHUNKAH_CONFIG_STR="$(sudo podman inspect "${IMG}")"
-    podman run --rm "--mount=type=image,src=${IMG},dest=/chunkah" -e CHUNKAH_CONFIG_STR quay.io/jlebon/chunkah build --label ostree.bootable=1 --compressed --max-layers 67 | \
-        podman load | \
-        sort -n | \
-        head -n1 | \
-        cut -d, -f2 | \
-        cut -d: -f3 | \
-        xargs -I{} sudo podman tag {} {{image}}
+    set -eoux pipefail
+
+    # FIXME: Bandaid fix for
+    # https://github.com/zirconium-dev/zirconium/issues/363
+    # Do this properly in mkosi at some point
+    DATE="$(date -u +%Y\-%m\-%d\T%H\:%M\:%S\Z)"
+
+    CHUNKAH_OUTPUT_DIR="$(mktemp -d)"
+    CHUNKAH_CONFIG_FILE="$(mktemp)"
+
+    trap 'rm -f "${CHUNKAH_CONFIG_FILE}"; rm -rf "${CHUNKAH_OUTPUT_DIR}"' EXIT
+    podman inspect "${image_name}" > "${CHUNKAH_CONFIG_FILE}"
+
+    podman run --rm "--mount=type=image,src=${image_name},target=/chunkah" \
+        -v "${CHUNKAH_CONFIG_FILE}:/chunkah-config.json:ro,Z" \
+        -v "${CHUNKAH_OUTPUT_DIR}:/run/out:Z" \
+        quay.io/coreos/chunkah:latest build \
+        --verbose \
+        --compressed \
+        --prune /sysroot/ \
+        --label org.opencontainers.image.created="${DATE}" \
+        --max-layers 128 --tag "${image_name}" \
+        --config /chunkah-config.json \
+        --output oci:/run/out/chunked
+
+    CHUNKED_IMAGE="$(podman pull "oci:${CHUNKAH_OUTPUT_DIR}/chunked")"
+    podman tag "${CHUNKED_IMAGE}" "${image_name}"
 
 clean:
     mkosi clean

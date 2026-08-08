@@ -3,6 +3,15 @@ zdots_path := "/usr/share/zirconium/zdots"
 default:
     @zjust --choose
 
+# Simple wrapper over bootc/pompona for updating your system
+update:
+    #!/usr/bin/env bash
+    if [[ -e "/sysroot/ostree" || -e "/sysroot/composefs" ]] ; then
+        pkexec bootc upgrade
+    else
+        pompona-update
+    fi
+
 update-dotfiles:
     #!/usr/bin/env bash
     echo "Updating non-overwritten dotfiles to their latest in-image state"
@@ -20,7 +29,7 @@ _zdots-reset $FILE="":
 
 reset-all-configs:
     #!/usr/bin/env bash
-    if gum confirm --confirm=no "Are you sure you want to reset all your configuration?" ; then
+    if gum confirm --default=no "Are you sure you want to reset all your configuration?" ; then
         chezmoi apply --force -S "{{ zdots_path }}" --verbose --config "$HOME/.config/zirconium/chezmoi/chezmoi.toml"
     fi
 
@@ -115,33 +124,29 @@ reset-niri:
     fi
 
 update-greeter:
-    dms greeter sync
+    DMS_PRIVESC=sudo dms greeter sync --auth
 
 # Turn automatic updates on or off
 toggle-updates ACTION="prompt":
     #!/usr/bin/bash
-    CURRENT_STATE="disabled"
-    if systemctl cat -- uupd.timer &> /dev/null; then
-        TIMER="uupd.timer"
-    else
-        TIMER="rpm-ostreed-automatic.timer"
-    fi
-    CURRENT_STATE="$(systemctl is-enabled "${TIMER}")"
+    CURRENT_STATE="$(systemctl is-enabled uupd.timer)"
 
     if [ "${CURRENT_STATE}" == "enabled" ] ; then
         if gum confirm --default=no "Would you like to disable automatic updates?" ; then
-            sudo systemctl enable "$TIMER"
-            echo "Updates have been enabled"
+            sudo systemctl disable uupd.timer
+            echo "Updates have been disabled"
         fi
     else
         if gum confirm --default=yes "Would you like to enable automatic updates?" ; then
-            sudo systemctl disable "$TIMER"
-            echo "Updates have been disabled"
+            sudo systemctl enable uupd.timer
+            echo "Updates have been enabled"
         fi
     fi
 
+alias toggle-tpm2 := toggle-luks-tpm2
+
 # TPM2 auto-unlock toggle
-toggle-tpm2:
+toggle-luks-tpm2:
     @/usr/bin/luks-tpm2-autounlock
 
 # Check for local overrides

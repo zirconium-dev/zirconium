@@ -1,0 +1,30 @@
+[install]
+allowed_installtypes = ["wholedisk"]
+copy_mode = "bootc"
+bootc_imgref = "oci:/usr/lib/zirconium/install/zirconium-oci"
+bootc_enforce_sigpolicy = true
+# bootc_args = ["--skip-fetch-check"]
+
+[[bento]]
+title = "page-welcome"
+desc = "page-installation-welcome-desc"
+link = "https://projectbluefin.io"
+icon = "explore-symbolic"
+
+[[bento]]
+title = "page-installation-help"
+desc = "page-installation-help-desc"
+link = "https://universal-blue.discourse.group/c/bluefin/6"
+icon = "chat-symbolic"
+
+[[bento]]
+title = "page-installation-contrib"
+desc = "page-installation-contrib-desc"
+link = "https://docs.projectbluefin.io"
+icon = "applications-development-symbolic"
+
+[distro]
+name = "Zirconium"
+
+[[postinstall]]
+module = "Script"

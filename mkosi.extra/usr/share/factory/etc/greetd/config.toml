@@ -2,6 +2,7 @@
 service = "greetd-spawn"
 
 [terminal]
+# Note: KMSCON will break greetd wherever the VT is started
 vt = 1
 
 [default_session]

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+set -xeuo pipefail
+
+mkdir -p "${SRCDIR}/cache"
+pushd "${SRCDIR}/cache"
+cp "${SRCDIR}/mkosi.profiles/nvidia/mkosi.conf.d/fedora/mkosi.sandbox/usr/share/dnf5/repos.d/negativo-17-nvidia.repo" /usr/share/dnf5/repos.d/
+dnf download dkms-nvidia --repo=fedora-nvidia "--arch=noarch" "--destdir=${SRCDIR}/cache"
+find . -iname "dkms-nvidia*.rpm"
+popd
+
+rpm -i "${SRCDIR}/cache/*dkms-nvidia*.rpm" --noscripts --nodeps

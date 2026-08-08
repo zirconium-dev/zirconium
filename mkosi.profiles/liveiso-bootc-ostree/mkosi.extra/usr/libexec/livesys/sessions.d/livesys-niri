@@ -1,0 +1,34 @@
+#!/bin/sh
+#
+# livesys-niri: niri specific setup for livesys
+#
+
+rm /etc/greetd/config.toml
+tee /etc/greetd/config.toml <<'EOF'
+[terminal]
+vt = 1
+
+[default_session]
+command = "niri-session -l"
+user = "liveuser"
+
+[initial_session]
+command = "niri-session -l"
+user = "liveuser"
+EOF
+systemctl restart greetd
+
+# # show liveinst.desktop on desktop and in menu
+# mkdir -p /home/liveuser/.local/share/applications/
+# cp /usr/share/applications/liveinst.desktop /home/liveuser/.local/share/applications/
+# sed -i 's/NoDisplay=true/NoDisplay=false/' /home/liveuser/.local/share/applications/liveinst.desktop
+
+# Put the installer icon to the dock
+# DMS_DEFAULTCONFIG_BASEDIR="/usr/share/miracle-wm/DankMaterialShell-default-config"
+# sed -i 's/"foot"/"liveinst"/' "${DMS_DEFAULTCONFIG_BASEDIR}/user-local-state/DankMaterialShell/session.json"
+
+# echoing type liveinst to start the installer
+echo "echo 'Please type liveinst and press Enter to start the installer'" >> /home/liveuser/.bashrc
+
+# Ensure the files and folders are owned by liveuser
+chown --recursive liveuser:liveuser /home/liveuser/

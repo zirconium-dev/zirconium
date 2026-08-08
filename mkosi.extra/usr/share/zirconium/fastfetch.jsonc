@@ -97,7 +97,7 @@
         {
             "type": "packages",
             "key": " 󰏖",
-            "disabled": ["rpm"]
+            "disabled": ["rpm", "appimage"]
         },
         "break",
         {

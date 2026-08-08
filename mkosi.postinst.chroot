@@ -4,14 +4,10 @@ set -xeuo pipefail
 install -Dpm0644 -t /usr/share/ "$SRCDIR/cache/homebrew.tar.zst"
 install -Dpm0644 -t /usr/share/flatpak/remotes.d/ "$SRCDIR/cache/flathub.flatpakrepo"
 
-niri --version | grep -i -E "niri [[:digit:]]*\.[[:digit:]]* (.*\.git\..*)"
-
-sed -i 's|^ExecStart=.*|ExecStart=/usr/bin/bootc update --quiet|' /usr/lib/systemd/system/bootc-fetch-apply-updates.service
+niri --version | grep -i -E "niri [[:digit:]]*\.[[:digit:]]*"
 
 install -d /usr/share/zirconium/
-install -Dpm0644 -t /usr/lib/pam.d/ /usr/share/quickshell/dms/assets/pam/* # Fixes long login times on fingerprint auth
 sed --sandbox -i -e '/gnome_keyring.so/ s/-auth/auth/ ; /gnome_keyring.so/ s/-session/session/' /etc/pam.d/greetd
-echo 'source /usr/share/zirconium/shell/pure.bash' | tee -a "/etc/bashrc"
 install -d /usr/share/bash-completion/completions /usr/share/zsh/site-functions /usr/share/fish/vendor_completions.d/
 just --completions bash | sed -E 's/([\(_" ])just/\1zjust/g' > /usr/share/bash-completion/completions/zjust
 just --completions zsh | sed -E 's/([\(_" ])just/\1zjust/g' > /usr/share/zsh/site-functions/_zjust
@@ -20,43 +16,45 @@ just --completions fish | sed -E 's/([\(_" ])just/\1zjust/g' > /usr/share/fish/v
 fc-cache --force --really-force --system-only --verbose # recreate font-cache to pick up the added fonts
 
 # These files NEED to be on the image.
-grep -F -e "ghcr.io/zirconium-dev" /usr/share/factory/etc/containers/policy.json
 grep -F -e "Comment=Central repository of Flatpak applications" /usr/share/flatpak/remotes.d/flathub.flatpakrepo
 stat /usr/share/flatpak/remotes.d/flathub.flatpakrepo
-stat /usr/share/pki/containers/zirconium.pub
-stat /usr/share/pki/containers/jackrabbit.pub
 stat /usr/bin/luks*tpm*
 stat /usr/share/zirconium/just/00-start.just
-stat /usr/bin/uupd
-# FIXME: wait until taidan gets this PR https://github.com/Ultramarine-Linux/taidan/pull/142/changes
+# Not yet, needs a lot of fixes for sysupdate version
 # stat /usr/bin/taidan
 # stat /usr/lib/systemd/system/taidan*.service
-stat /usr/lib/systemd/system/uupd.service
-stat /usr/lib/systemd/system/uupd.timer
-stat /usr/lib/systemd/system/brew-setup.service
-stat /usr/share/homebrew.tar.zst
-stat /usr/lib/tmpfiles.d/homebrew.conf
 
-HOME_URL="https://github.com/zirconium-dev/zirconium"
-echo "zirconium" | tee "/etc/hostname"
-# OS Release File (changed in order with upstream)
-# TODO: change ANSI_COLOR
-sed -i -f - /usr/lib/os-release <<EOF
-s|^NAME=.*|NAME=\"Zirconium\"|
-s|^PRETTY_NAME=.*|PRETTY_NAME=\"Zirconium\"|
-s|^VERSION_CODENAME=.*|VERSION_CODENAME=\"Juno\"|
-s|^VARIANT_ID=.*|VARIANT_ID=""|
-s|^HOME_URL=.*|HOME_URL=\"${HOME_URL}\"|
-s|^BUG_REPORT_URL=.*|BUG_REPORT_URL=\"${HOME_URL}/issues\"|
-s|^SUPPORT_URL=.*|SUPPORT_URL=\"${HOME_URL}/issues\"|
-s|^CPE_NAME=\".*\"|CPE_NAME=\"cpe:/o:zirconium-dev:zirconium\"|
-s|^DOCUMENTATION_URL=.*|DOCUMENTATION_URL=\"${HOME_URL}\"|
-s|^DEFAULT_HOSTNAME=.*|DEFAULT_HOSTNAME="zirconium"|
-
-/^REDHAT_BUGZILLA_PRODUCT=/d
-/^REDHAT_BUGZILLA_PRODUCT_VERSION=/d
-/^REDHAT_SUPPORT_PRODUCT=/d
-/^REDHAT_SUPPORT_PRODUCT_VERSION=/d
-EOF
-echo "VARIANT_ID=container" >> /usr/lib/os-release
 ln -s fedora-release /usr/lib/system-release
+
+
+(
+    . /usr/lib/os-release
+    IMAGE_NAME="zirconium"
+    HOME_URL="https://github.com/zirconium-dev/zirconium"
+
+    tee /usr/lib/os-release <<EOF
+NAME="${IMAGE_NAME^}"
+ID="${IMAGE_NAME}"
+ID_LIKE="$ID"
+PRETTY_NAME="${IMAGE_NAME^}"
+FANCY_NAME="\033[0;38:2:252:186:3;1;49m⸭\033[0;38:2:252:186:3;49m ${IMAGE_NAME^} \033[0m"
+VERSION="$VERSION"
+VERSION_ID="$VERSION_ID"
+VERSION_CODENAME="Pibble"
+ANSI_COLOR="38:2:252:186:3;1;49"
+ANSI_COLOR_REVERSE="48;2;252;186;3;1;30"
+LOGO="${IMAGE_NAME}"
+HOME_URL="${HOME_URL}"
+BUG_REPORT_URL="${HOME_URL}/issues"
+SUPPORT_URL=\"${HOME_URL}/issues
+CPE_NAME="cpe:/o:${IMAGE_NAME}-dev:${IMAGE_NAME}"
+DOCUMENTATION_URL="${HOME_URL}"
+DEFAULT_HOSTNAME="${IMAGE_NAME}-????-????"
+EOF
+
+    tee /usr/lib/issue <<EOF
+\e[0;38:2:252:186:3;1;49m▒\e[0m \e[0;38:2:252:186:3;1;49m⸭\e[0;38:2:252:186:3;49m ${IMAGE_NAME^} \e[0m
+\e[0;38:2:252:186:3;1;49m▒\e[0m Kernel \r on an \m (\l)
+
+EOF
+)

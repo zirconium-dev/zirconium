@@ -1,0 +1,9 @@
+disable brew-setup.service
+disable brew-update.service
+disable flatpak-preinstall.service
+disable greetd.service
+disable systemd-firstboot.service
+enable livesys-late.service
+enable livesys.service
+enable var-tmp.mount
+enable greetd.service

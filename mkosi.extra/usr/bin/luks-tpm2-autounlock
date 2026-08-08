@@ -14,7 +14,7 @@ case "${EXIT_CODE}" in
     exit 0
 esac
 
-RD_LUKS_UUID="$(xargs -n1 -a /proc/cmdline | grep -F -e "rd.luks.uuid" | cut -d = -f 2 | sed "s/^luks-//" )"
+RD_LUKS_UUID="$(xargs -n1 -a /proc/cmdline | grep -E -e "rd.luks.(uuid|name)" | head -n 1 | cut -d= -f 2 | sed "s/^luks-//" )"
 CRYPT_DISK="$(realpath "/dev/disk/by-uuid/${RD_LUKS_UUID}")"
 
 if ! find /dev -iname "${RD_LUKS_UUID:-INVALIDINVALID}" | grep -F -e "${RD_LUKS_UUID}" &>/dev/null; then
