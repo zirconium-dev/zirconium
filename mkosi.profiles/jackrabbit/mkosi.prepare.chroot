@@ -15,4 +15,3 @@ if [ ! -e "${SRCDIR}/cache/linux-ogc" ] ; then
 	mkdir -p "${SRCDIR}/cache/linux-ogc"
 	mv *.rpm "${SRCDIR}/cache/linux-ogc/"
 fi
-
