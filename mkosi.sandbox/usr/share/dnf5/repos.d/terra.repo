@@ -10,6 +10,7 @@ repo_gpgcheck=0
 enabled=0
 enabled_metadata=1
 countme=1
+exclude=kernel*
 
 [terra-source]
 name=Terra $releasever - Source
