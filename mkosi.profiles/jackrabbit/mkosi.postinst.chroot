@@ -24,6 +24,4 @@ stat "/usr/lib/modules/${KERNEL_VERSION}"/extra/xone*.ko* # We actually need the
 KERNEL_PATH="$(find /usr/lib/modules -maxdepth 1 -type d | grep -v -E "*.img" | tail -n 1)"
 dracut -v --force "${KERNEL_PATH}/initramfs.img" --kver "$(basename "${KERNEL_PATH}")"
 
-bootupctl backend generate-update-metadata
-
 echo 'import "/usr/share/zirconium/just/67-gamerslop.just"' >> /usr/share/zirconium/just/00-start.just
