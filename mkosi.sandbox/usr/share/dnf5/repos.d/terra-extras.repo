@@ -11,6 +11,7 @@ enabled=0
 enabled_metadata=1
 countme=1
 priority=150
+exclude=zlib
 
 [terra-extras-source]
 name=Terra $releasever (Extras) - Source
