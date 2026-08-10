@@ -12,6 +12,7 @@ rm -rfv /usr/lib/modules/*
 rpm -ivh --force "${SRCDIR}/cache/linux-ogc/kernel-{[0-9],core,modules,devel}*.rpm" --nodeps --noscripts
 
 rpm -qi mesa-filesystem | grep -F -e "Terra"
+rpm -qi kernel | grep -F -e "ogc"
 rpm -qa | grep -v -E "^gamescope" &> /dev/null
 
 KERNEL_VERSION="$(find "/usr/lib/modules" -maxdepth 1 -type d ! -path "/usr/lib/modules" -exec basename '{}' ';' | sort | tail -n 1)"
