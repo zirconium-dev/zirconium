@@ -7,3 +7,6 @@
 [submodule "subprojects/ublue-brew"]
 	path = subprojects/ublue-brew
 	url = https://github.com/ublue-os/brew
+[submodule "subprojects/valve-hw-audio"]
+	path = subprojects/valve-hw-audio
+	url = https://github.com/evlaV/valve-hardware-audio-processing.git
