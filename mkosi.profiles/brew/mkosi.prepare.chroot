@@ -5,8 +5,8 @@ set -xeuo pipefail
 mkdir -p "${SRCDIR}/cache"
 
 if [ ! -e "${SRCDIR}/cache/crane" ] ; then
-	CRANE_URL="$(curl --retry 3 --retry-delay 2 --retry-max-time 60 -fsSL https://api.github.com/repos/google/go-containerregistry/releases/latest | jq -rc --arg arch "$(arch | sed "s/aarch/arm/")" '.assets[] | select(.name=="go-containerregistry_Linux_" + $arch + ".tar.gz") | .browser_download_url')"
-	curl --retry 3 --retry-delay 2 --retry-max-time 60 -fsSLo /dev/stdout "${CRANE_URL}" | tar -xvzf - -C "${SRCDIR}/cache" --owner=0 --group=0 --no-same-owner --no-same-permissions crane
+	CRANE_URL="$(ghcurl https://api.github.com/repos/google/go-containerregistry/releases/latest | jq -rc --arg arch "$(arch | sed "s/aarch/arm/")" '.assets[] | select(.name=="go-containerregistry_Linux_" + $arch + ".tar.gz") | .browser_download_url')"
+	ghcurl "${CRANE_URL}" -Lo /dev/stdout | tar -xvzf - -C "${SRCDIR}/cache" --owner=0 --group=0 --no-same-owner --no-same-permissions crane
 fi
 
 if [ ! -e "${SRCDIR}/cache/homebrew.tar.zst" ] ; then

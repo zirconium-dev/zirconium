@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# modified script from https://github.com/ublue-os/bazzite/blob/876da25252543215f05d2da9af6900848c9b194b/build_files/ghcurl
+set -eo pipefail
+
+# Check for GITHUB_TOKEN env var
+if [[ -n "$GITHUB_TOKEN" ]]; then
+  echo "Using GITHUB_TOKEN for authentication." >&2
+  AUTH_HEADER="Authorization: Bearer $GITHUB_TOKEN"
+else
+  echo "GITHUB_TOKEN not set. Using unauthenticated requests." >&2
+  AUTH_HEADER=""
+fi
+
+URL="$1"
+shift
+OPTIONS=("$@")
+
+if [[ -n "$AUTH_HEADER" ]]; then
+  curl --retry 3 --retry-delay 2 --retry-max-time 60 -sSL -H "$AUTH_HEADER" "${OPTIONS[@]}" "$URL"
+else
+  curl --retry 3 --retry-delay 2 --retry-max-time 60 -sSL "${OPTIONS[@]}" "$URL"
+fi

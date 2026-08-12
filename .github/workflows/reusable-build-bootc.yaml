@@ -106,13 +106,14 @@ jobs:
           CI_MKOSI_PROFILES: ${{ inputs.profiles }}
           CI_MKOSI_RELEASE: ${{ inputs.release }}
           IMAGE_FULL: localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
           RELEASE_ARGUMENTS=()
           if [ "$CI_MKOSI_RELEASE" != "" ] ; then
             RELEASE_ARGUMENTS+=("--release=$CI_MKOSI_RELEASE")
           fi
-          sudo mkosi -B -ff --debug --profile=base,base-desktop,bootc-ostree,brew,zirconium-bootc-ostree,${CI_MKOSI_PROFILES} ${PROFILE_ARGUMENTS} ${RELEASE_ARGUMENTS}
+          sudo mkosi -B -ff --debug --profile=base,base-desktop,bootc-ostree,brew,zirconium-bootc-ostree,${CI_MKOSI_PROFILES} ${PROFILE_ARGUMENTS} ${RELEASE_ARGUMENTS} --environment=GITHUB_TOKEN=${GITHUB_TOKEN}
 
       - name: Load image
         id: load
