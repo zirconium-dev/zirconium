@@ -15,3 +15,7 @@ if [ ! -e "${SRCDIR}/cache/linux-ogc" ] ; then
 	mkdir -p "${SRCDIR}/cache/linux-ogc"
 	mv *.rpm "${SRCDIR}/cache/linux-ogc/"
 fi
+
+if [ ! -e "${SRCDIR}/cache/valve-audio" ] ; then
+	git clone --depth=1 https://github.com/evlaV/valve-hardware-audio-processing "${SRCDIR}/cache/valve-audio"
+fi
