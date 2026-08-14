@@ -5,9 +5,9 @@ set -xeuo pipefail
 mkdir -p "${SRCDIR}/cache"
 
 if [ ! -e "${SRCDIR}/cache/oras" ] ; then
-	ORAS_VERSION="$(ghcurl https://api.github.com/repos/oras-project/oras/releases/latest | jq -rc .tag_name)"
-	ORAS_URL="$(ghcurl https://api.github.com/repos/oras-project/oras/releases/latest | jq -rc --arg tag_name "${ORAS_VERSION#v}" --arg arch "$(arch | sed "s/aarch/arm/;s/x86_64/amd64/")" '.assets[] | select(.name=="oras_" + $tag_name + "_linux_" + $arch + ".tar.gz") | .browser_download_url')"
-	ghcurl "${ORAS_URL}" -Lo /dev/stdout | tar -xvzf - -C "${SRCDIR}/cache" --owner=0 --group=0 --no-same-owner --no-same-permissions oras
+	ORAS_VERSION="$("${SRCDIR}/ghcurl" https://api.github.com/repos/oras-project/oras/releases/latest | jq -rc .tag_name)"
+	ORAS_URL="$("${SRCDIR}/ghcurl" https://api.github.com/repos/oras-project/oras/releases/latest | jq -rc --arg tag_name "${ORAS_VERSION#v}" --arg arch "$(arch | sed "s/aarch/arm/;s/x86_64/amd64/")" '.assets[] | select(.name=="oras_" + $tag_name + "_linux_" + $arch + ".tar.gz") | .browser_download_url')"
+	"${SRCDIR}/ghcurl" "${ORAS_URL}" -Lo /dev/stdout | tar -xvzf - -C "${SRCDIR}/cache" --owner=0 --group=0 --no-same-owner --no-same-permissions oras
 fi
 
 if [ ! -e "${SRCDIR}/cache/linux-ogc" ] ; then
