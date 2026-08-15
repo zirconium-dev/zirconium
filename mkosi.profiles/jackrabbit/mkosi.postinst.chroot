@@ -28,5 +28,5 @@ dracut -v --force "${KERNEL_PATH}/initramfs.img" --kver "$(basename "${KERNEL_PA
 echo 'import "/usr/share/zirconium/just/67-gamerslop.just"' >> /usr/share/zirconium/just/00-start.just
 
 mkdir -p /usr/{lib/firmware/amd,share/alsa/ucm2/conf.d}
-cp -r "${SRCDIR}/cache/valve-audio/ucm2/conf.d/sof-nau8821-max" /usr/share/alsa/ucm2/conf.d/
-cp -r "${SRCDIR}/cache/valve-audio/sof_fw/sof" "${SRCDIR}/cache/valve-audio/sof_fw/sof-tplg" /usr/lib/firmware/amd/
+cp -r "${SRCDIR}/cache/valve-audio/sof-nau8821-max" /usr/share/alsa/ucm2/conf.d/
+cp -r "${SRCDIR}/cache/valve-audio/sof_fw/." /usr/lib/firmware/amd/

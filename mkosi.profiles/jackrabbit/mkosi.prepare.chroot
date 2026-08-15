@@ -17,5 +17,9 @@ if [ ! -e "${SRCDIR}/cache/linux-ogc" ] ; then
 fi
 
 if [ ! -e "${SRCDIR}/cache/valve-audio" ] ; then
-	git clone --depth=1 https://github.com/evlaV/valve-hardware-audio-processing "${SRCDIR}/cache/valve-audio"
+	curl --retry 3 --retry-delay 2 --retry-max-time 60 -fsSLo /dev/stdout https://steamdeck-packages.steamos.cloud/archlinux-mirror/jupiter-main/os/x86_64/steamdeck-dsp-1.00-1-any.pkg.tar.zst | tar --zstd -xvf - -C "${SRCDIR}/cache" --owner=0 --group=0 --no-same-owner --no-same-permissions usr/lib/firmware/amd usr/share/alsa/ucm2/conf.d
+	mkdir -p "${SRCDIR}/cache/valve-audio"
+	mv "${SRCDIR}/cache/usr/lib/firmware/amd" "${SRCDIR}/cache/valve-audio/sof_fw"
+	mv "${SRCDIR}/cache/usr/share/alsa/ucm2/conf.d/sof-nau8821-max" "${SRCDIR}/cache/valve-audio"
+	rm -rf "${SRCDIR}/cache/usr"
 fi
