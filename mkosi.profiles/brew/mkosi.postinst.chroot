@@ -2,7 +2,7 @@
 
 set -xeuo pipefail
 
-cp -r "${SRCDIR}/cache/ublue-brew/." /
+cp -a "${SRCDIR}/cache/ublue-brew/." /
 
 stat /usr/lib/systemd/system/brew-setup.service
 stat /usr/share/homebrew.tar.zst
