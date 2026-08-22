@@ -81,7 +81,7 @@ jobs:
           submodules: true
 
       - name: Install mkosi
-        uses: systemd/mkosi@9b7d87a1707e39a42cfb54dce5cf745ef7b99a7e # main
+        uses: systemd/mkosi@bf2addb2ec3457d0ba663a30a392678d453de9d8 # main
 
       - name: Render configuration (for debugging)
         run: mkosi cat-config --debug
