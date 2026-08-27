@@ -2,9 +2,10 @@
 
 set -xeuo pipefail
 
+find "${SRCDIR}/cache/ublue-brew" -type f -exec setfattr -h -n user.component -v "homebrew" {} +
+find "${SRCDIR}/cache/ublue-brew" -type f -exec setfattr -h -n user.update-interval -v "weekly" {} +
+
 cp -a "${SRCDIR}/cache/ublue-brew/." /
 
 stat /usr/lib/systemd/system/brew-setup.service
 stat /usr/share/homebrew.tar.zst
-
-setfattr -n user.component -v "homebrew" /usr/share/homebrew.tar.zst
