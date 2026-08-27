@@ -8,3 +8,4 @@ enable flatpak-preinstall.service
 enable greetd.service
 enable ntpd-rs.service
 enable systemd-resolved.service
+enable cardwired.service
