@@ -39,17 +39,6 @@ load:
     set -x
     podman load -i "$(find mkosi.output/* -maxdepth 0 -type d -printf "%T@ ,%p\n" -iname "_*" -print0 | sort -n | head -n1 | cut -d, -f2)" -q | cut -d: -f3 | xargs -I{} podman tag {} {{image}}
 
-ostree-rechunk:
-    #!/usr/bin/env bash
-    sudo podman run --rm \
-          --privileged \
-          -t \
-          -v /var/lib/containers:/var/lib/containers \
-          "quay.io/centos-bootc/centos-bootc:stream10" \
-          /usr/libexec/bootc-base-imagectl rechunk --max-layers 127 \
-          "{{image}}" \
-          "{{image}}" || exit 1
-
 bootc *ARGS:
     podman run \
         --rm --privileged --pid=host \
@@ -71,7 +60,7 @@ disk-image $filesystem=filesystem:
 
 rechunk $image_name=image:
     #!/usr/bin/env bash
-    set -eoux pipefail
+    set -xeuo pipefail
 
     # FIXME: Bandaid fix for
     # https://github.com/zirconium-dev/zirconium/issues/363
@@ -90,9 +79,8 @@ rechunk $image_name=image:
         quay.io/coreos/chunkah:latest build \
         --verbose \
         --compressed \
-        --prune /sysroot/ \
         --label org.opencontainers.image.created="${DATE}" \
-        --max-layers 128 --tag "${image_name}" \
+        --max-layers 256 \
         --config /chunkah-config.json \
         --output oci:/run/out/chunked
 
