@@ -1,7 +1,7 @@
 [terra]
 name=Terra $releasever
-#baseurl=https://repos.fyralabs.com/terra$releasever
-metalink=https://tetsudou.fyralabs.com/metalink?repo=terra$releasever&arch=$basearch
+baseurl=https://repos.fyralabs.com/terra$releasever
+#metalink=https://tetsudou.fyralabs.com/metalink?repo=terra$releasever&arch=$basearch
 metadata_expire=6h
 type=rpm
 gpgcheck=1
@@ -14,8 +14,8 @@ exclude=kernel* falcond
 
 [terra-source]
 name=Terra $releasever - Source
-#baseurl=https://repos.fyralabs.com/terra$releasever-source
-metalink=https://tetsudou.fyralabs.com/metalink?repo=terra$releasever-source&arch=$basearch
+baseurl=https://repos.fyralabs.com/terra$releasever-source
+#metalink=https://tetsudou.fyralabs.com/metalink?repo=terra$releasever-source&arch=$basearch
 metadata_expire=6h
 type=rpm
 gpgcheck=1

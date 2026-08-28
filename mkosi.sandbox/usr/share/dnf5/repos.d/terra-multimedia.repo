@@ -1,7 +1,7 @@
 [terra-multimedia]
 name=Terra $releasever (Multimedia)
-#baseurl=https://repos.fyralabs.com/terra$releasever-multimedia
-metalink=https://tetsudou.fyralabs.com/metalink?repo=terra$releasever-multimedia&arch=$basearch
+baseurl=https://repos.fyralabs.com/terra$releasever-multimedia
+#metalink=https://tetsudou.fyralabs.com/metalink?repo=terra$releasever-multimedia&arch=$basearch
 metadata_expire=6h
 type=rpm
 gpgcheck=1
@@ -14,8 +14,8 @@ priority=80
 
 [terra-multimedia-source]
 name=Terra $releasever (Multimedia) - Source
-#baseurl=https://repos.fyralabs.com/terra$releasever-multimedia-source
-metalink=https://tetsudou.fyralabs.com/metalink?repo=terra$releasever-multimedia-source&arch=$basearch
+baseurl=https://repos.fyralabs.com/terra$releasever-multimedia-source
+#metalink=https://tetsudou.fyralabs.com/metalink?repo=terra$releasever-multimedia-source&arch=$basearch
 metadata_expire=6h
 type=rpm
 gpgcheck=1

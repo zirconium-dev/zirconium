@@ -1,7 +1,7 @@
 [terra-extras]
 name=Terra $releasever (Extras)
-#baseurl=https://repos.fyralabs.com/terra$releasever-extras
-metalink=https://tetsudou.fyralabs.com/metalink?repo=terra$releasever-extras&arch=$basearch
+baseurl=https://repos.fyralabs.com/terra$releasever-extras
+#metalink=https://tetsudou.fyralabs.com/metalink?repo=terra$releasever-extras&arch=$basearch
 metadata_expire=6h
 type=rpm
 gpgcheck=1
@@ -15,8 +15,8 @@ exclude=zlib
 
 [terra-extras-source]
 name=Terra $releasever (Extras) - Source
-#baseurl=https://repos.fyralabs.com/terra$releasever-extras-source
-metalink=https://tetsudou.fyralabs.com/metalink?repo=terra$releasever-extras-source&arch=$basearch
+baseurl=https://repos.fyralabs.com/terra$releasever-extras-source
+#metalink=https://tetsudou.fyralabs.com/metalink?repo=terra$releasever-extras-source&arch=$basearch
 metadata_expire=6h
 type=rpm
 gpgcheck=1
