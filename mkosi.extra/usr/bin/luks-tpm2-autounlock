@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # References:
-#  https://os.gnome.org/install
+#  https://gitlab.gnome.org/GNOME/gnome-build-meta/-/blob/master/docs/using.md
 #  https://www.reddit.com/r/Fedora/comments/uo4ufq/any_way_to_get_systemdcryptenroll_working_on/
 #  https://0pointer.net/blog/unlocking-luks2-volumes-with-tpm2-fido2-pkcs11-security-hardware-on-systemd-248.html
 
@@ -40,6 +40,6 @@ case "${EXIT_CODE}" in
     exit 0
 esac
 
-if sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs='' ${SET_PIN_ARG} "${CRYPT_DISK}" ; then
+if sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=7+14 ${SET_PIN_ARG} "${CRYPT_DISK}" ; then
   echo "TPM2 LUKS auto-unlock configured for next reboot."
 fi
