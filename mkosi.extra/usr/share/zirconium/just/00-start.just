@@ -124,7 +124,7 @@ reset-niri:
     fi
 
 update-greeter:
-    DMS_PRIVESC=sudo dms greeter sync --auth
+    DMS_PRIVESC=sudo dms-greeter sync --auth
 
 # Turn automatic updates on or off
 toggle-updates ACTION="prompt":
