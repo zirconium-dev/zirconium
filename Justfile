@@ -26,7 +26,11 @@ build-ostree:
     mkosi -B --debug-shell --profile=base,base-desktop,bootc-ostree,brew,zirconium-bootc-ostree
 
 build-sysupdate:
-    mkosi -B --debug-shell --profile=base,base-desktop,sysupdate,brew,base
+    mkosi -B --debug-shell --profile=base,base-desktop,sysupdate,brew
+
+vm-sysupdate:
+    dd if=/dev/zero of=$(find "./mkosi.output" -maxdepth 1 -iname "{{ image_name }}*x86-64.raw") bs=1G count=0 seek=50
+    vmbuddy $(find "./mkosi.output" -maxdepth 1 -iname "{{ image_name }}*x86-64.raw")
 
 build-iso:
     mkosi -B --debug --profile=iso
