@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+glorpfetch
+
+echo "You are testing alpha-grade software right now. Beware!"
+echo "Run zinst to run the TUI installer."

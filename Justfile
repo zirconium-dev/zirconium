@@ -28,8 +28,19 @@ build-ostree:
 build-sysupdate:
     mkosi -B --debug-shell --profile=base,base-desktop,sysupdate,brew,base
 
-build-iso:
-    mkosi -B --debug --profile=iso
+build-iso: build-iso-chroot pack-iso-chroot
+
+build-iso-chroot:
+    #!/usr/bin/env bash
+    mkosi -B --debug-shell --profile=liveiso-bootc-ostree,base,base-desktop --tools-tree-release=44
+
+pack-iso-chroot $IMAGE_NAME=image_name:
+    #!/usr/bin/env bash
+    set -x
+    LATEST_IMAGE="$(realpath "$(find mkosi.output -type d -iname "${IMAGE_NAME^}_*_$(uname -m | tr '_' '-')" | tail -n-1)")"
+    # We need root because of xorriso
+    mkdir -p out
+    sudo podman run --rm -it -v ./lonicera:/lonicera:Z,ro -v $LATEST_IMAGE:/input:Z,ro -v ./out:/out:Z -v ./work:/tmp/work:Z -e LONICERA_OUTDIR=/out fedora:latest sh -c 'find /tmp ; dnf install -y erofs-utils dosfstools mtools xorriso && /lonicera/lonicera /input'
 
 lint:
     podman run --rm -it --entrypoint=bootc {{ image }} container lint
