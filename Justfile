@@ -40,7 +40,17 @@ pack-iso-chroot $IMAGE_NAME=image_name:
     LATEST_IMAGE="$(realpath "$(find mkosi.output -type d -iname "${IMAGE_NAME^}_*_$(uname -m | tr '_' '-')" | tail -n-1)")"
     # We need root because of xorriso
     mkdir -p out
-    sudo podman run --rm -it -v ./lonicera:/lonicera:Z,ro -v $LATEST_IMAGE:/input:Z,ro -v ./out:/out:Z -v ./work:/tmp/work:Z -e LONICERA_OUTDIR=/out fedora:latest sh -c 'find /tmp ; dnf install -y erofs-utils dosfstools mtools xorriso && /lonicera/lonicera /input'
+    sudo podman run --rm -it --privileged \
+     -v "./lonicera:/lonicera:Z,rw" \
+     -v "$LATEST_IMAGE:/input:Z,rw" \
+     -v "./out:/out:Z,rw" \
+     -v "./work:/tmp/work:Z,rw" \
+     -w /tmp/work \
+     -e LONICERA_INCREMENTAL=1 \
+     -e LONICERA_DISTRO_UGLYNAME="zirconium" \
+     -e "LONICERA_OUTPUT_NAME=$IMAGE_NAME" \
+     fedora:latest \
+     sh -c 'dnf install -y erofs-utils dosfstools mtools xorriso && /lonicera/lonicera /input /out'
 
 lint:
     podman run --rm -it --entrypoint=bootc {{ image }} container lint
