@@ -11,7 +11,7 @@ if [ ! -e "${SRCDIR}/cache/oras" ] ; then
 fi
 
 if [ ! -e "${SRCDIR}/cache/linux-ogc" ] ; then
-	"${SRCDIR}/cache/oras" pull ghcr.io/opengamingcollective/kernel-packages-fedora:latest-fc44
+	"${SRCDIR}/cache/oras" pull ghcr.io/opengamingcollective/kernel-packages-fedora:latest-fc$(rpm -E %fedora)
 	mkdir -p "${SRCDIR}/cache/linux-ogc"
 	mv *.rpm "${SRCDIR}/cache/linux-ogc/"
 fi
