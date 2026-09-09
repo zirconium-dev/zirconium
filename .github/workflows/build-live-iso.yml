@@ -46,7 +46,7 @@ jobs:
         env:
           TARGET_IMAGE: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}${{ matrix.flavor }}:latest
         run: |
-          sudo just build-iso # FIXME: Refactor so that we can have granuar control over everything in CI
+          sudo "$(which just)" build-iso # FIXME: Refactor so that we can have granuar control over everything in CI
           # FIXME: Make this renameable so we get pretty ISO names like zirconium-blah-live
           echo "output-directory=$(realpath ./out)" >> $GITHUB_OUTPUT
 
