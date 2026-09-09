@@ -32,14 +32,14 @@ build-iso: build-iso-chroot pack-iso-chroot
 
 build-iso-chroot:
     #!/usr/bin/env bash
-    mkosi -B --debug-shell --profile=liveiso-bootc-ostree,base,base-desktop --tools-tree-release=44
+    mkosi -B --debug-shell --profile=liveiso-bootc-ostree,base,base-desktop
 
 pack-iso-chroot $IMAGE_NAME=image_name:
     #!/usr/bin/env bash
     set -x
     LATEST_IMAGE="$(realpath "$(find mkosi.output -type d -iname "${IMAGE_NAME^}_*_$(uname -m | tr '_' '-')" | tail -n-1)")"
     # We need root because of xorriso
-    mkdir -p out
+    mkdir -p out work
     sudo podman run --rm -it --privileged \
      -v "./lonicera:/lonicera:Z,rw" \
      -v "$LATEST_IMAGE:/input:Z,rw" \
