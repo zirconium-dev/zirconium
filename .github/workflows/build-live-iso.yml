@@ -1,0 +1,80 @@
+---
+name: Build live ISO
+on:
+  schedule:
+    - cron: "0 1 * * TUE"
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'mkosi.profiles/liveiso-bootc-ostree/**'
+
+jobs:
+  build_release:
+    name: Build and release live ISO
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ["amd64", "arm64"]
+        flavor: ["", "-nvidia"] # WIP: ISOs for Jackrabbit
+    runs-on: ${{ matrix.platform == 'amd64' && 'ubuntu-26.04' || 'ubuntu-26.04-arm' }}
+
+    steps:
+      - name: Free disk space
+        uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
+        with:
+          skip-if-available: "64G"
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          submodules: true
+
+      - name: Install mkosi
+        uses: systemd/mkosi@9539f1771a328054df1b1e6138bee4a46ce89b83 # main
+
+      - name: Install just
+        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3
+
+      - name: Build ISO
+        env:
+          TARGET_IMAGE: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}${{ matrix.flavor }}:latest
+        run: |
+          sudo just build-iso # FIXME: Refactor so that we can have granuar control over everything in CI
+          # FIXME: Make this renameable so we get pretty ISO names like zirconium-blah-live
+          echo "output-directory=$(realpath ./out)" >> $GITHUB_OUTPUT
+
+      - name: Upload Artifact
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ${{ github.event.repository.name }}${{ matrix.flavor }}-${{ matrix.platform }}
+          path: ${{ steps.build-iso.outputs.output-directory }}
+          if-no-files-found: error
+          retention-days: 0
+          compression-level: 0
+          overwrite: true
+
+      - name: Upload to S3
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        shell: bash
+        env:
+          RCLONE_CONFIG_S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+          RCLONE_CONFIG_S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
+          RCLONE_CONFIG_S3_PROVIDER: ${{ secrets.S3_PROVIDER }}
+          RCLONE_CONFIG_S3_REGION: ${{ secrets.S3_REGION }}
+          RCLONE_CONFIG_S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+          RCLONE_CONFIG_S3_TYPE: s3
+          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+          SOURCE_DIR: ${{ steps.build-iso.outputs.output-directory }}
+        run: |
+          sudo apt update -y
+          sudo apt install -y rclone
+          rclone copy "${SOURCE_DIR}"/*.iso "S3:${S3_BUCKET_NAME}"
+          rclone copy "${SOURCE_DIR}"/*.iso-CHECKSUM "S3:${S3_BUCKET_NAME}"
