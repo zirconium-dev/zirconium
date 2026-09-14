@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+ZINST_DEBUG="${ZINST_DEBUG:-0}"
+[ "${ZINST_DEBUG}" == "1" ] && set -x
+
+DEVICES_FOUND=()
+while IFS='\n' read -r line ; do
+  DEVICES_FOUND+=("${line}")
+done <<< $(lsblk -J -O | jq -rc '.blockdevices[] | select(.type == "disk") | "\(.model) (\(.path))"' | grep -v zram)
+
+if [ "$DEVICES_FOUND" == "" ] ; then
+  echo "Could not find any suitable devices for installation, rerun with ZINST_DEBUG=1 to get debug information."
+  exit 1
+fi
+
+TARGET_DISK_PRETTY="$(gum choose --limit=1 --ordered --header="Select the installation media to install Zirconium to:" --select-if-one "${DEVICES_FOUND[@]}")"
+
+# This is horrible, figure out a better way of doing it, please!
+TARGET_DISK_PATH="$(echo "${TARGET_DISK_PRETTY}" | cut -f2 -d'(' | cut -f1 -d')')"
+TARGET_DISK_JSON="$(lsblk -J -O "${TARGET_DISK_PATH}")"
+
+gum style --bold "The following partitioning layout will be used for $(jq -rc ".blockdevices[] | select(.path == \"${TARGET_DISK_PATH}\") | \"\(.model) (\(.serial))\"" <<< "${TARGET_DISK_JSON}"):"
+ZINST_REPART_DIR="${ZINST_REPART_DIR:-/usr/lib/zinst/repart.d}"
+systemd-repart --dry-run=yes --no-pager --empty=allow "--definitions=${ZINST_REPART_DIR}" "${TARGET_DISK_PATH}"
+
+gum confirm "Confirm installation? This WILL WIPE YOUR DISK COMPLETELY. MAKE A BACKUP BEFORE INSTALLING (if necessary)."
+EXIT_CODE="$?"
+case "${EXIT_CODE}" in
+  0)
+    ;;
+  *)
+    echo "Installation canceled"
+    exit 0
+esac
+
+systemd-repart --dry-run=no --empty=allow --no-pager --pretty=false --no-legend "--definitions=${ZINST_REPART_DIR}" "${TARGET_DISK_PATH}"
+
+TARGET_DISK_REPART_JSON="$(systemd-repart --dry-run=yes --empty=allow --no-pager --pretty=false --no-legend "--definitions=${ZINST_REPART_DIR}" "${TARGET_DISK_PATH}" --json=short)"
+
+TARGET_DISK_ROOT_PARTITION="$(jq -rc '.[] | select(.type | startswith("root")) | .node' <<< "${TARGET_DISK_REPART_JSON}")"
+TARGET_DISK_BOOT_PARTITION="$(jq -rc '.[] | select(.type == "xbootldr") | .node' <<< "${TARGET_DISK_REPART_JSON}")"
+TARGET_DISK_ESP_PARTITION="$(jq -rc '.[] | select(.type == "esp") | .node' <<< "${TARGET_DISK_REPART_JSON}")"
+
+if [ "${TARGET_DISK_ROOT_PARTITION}" == "" ] || [ "${TARGET_DISK_ROOT_PARTITION}" == "null" ] ; then
+  echo "Failed finding root partition for disk"
+  exit 1
+fi
+
+ROOT_MOUNT="$(mktemp -d)"
+mount -t auto "${TARGET_DISK_ROOT_PARTITION}" "${ROOT_MOUNT}"
+mkdir -p "${ROOT_MOUNT}/boot"
+mount -t auto "${TARGET_DISK_BOOT_PARTITION}" "${ROOT_MOUNT}/boot"
+mkdir -p "${ROOT_MOUNT}/boot/efi"
+mount -t auto "${TARGET_DISK_ESP_PARTITION}" "${ROOT_MOUNT}/boot/efi"
+trap 'umount ${ROOT_MOUNT} ; umount ${ROOT_MOUNT}/boot ; umount ${ROOT_MOUNT}/boot/efi' EXIT
+
+pkexec bootc install to-filesystem --acknowledge-destructive --target-imgref ghcr.io/zirconium-dev/zirconium:latest --enforce-container-sigpolicy --skip-fetch-check --source-imgref oci:/usr/lib/zirconium/install/zirconium-oci "${ROOT_MOUNT}"
