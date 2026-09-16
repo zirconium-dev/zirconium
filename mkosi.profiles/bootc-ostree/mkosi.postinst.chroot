@@ -27,7 +27,7 @@ ln -sT var/mnt /mnt
 ln -sT var/opt /opt
 ln -sT var/roothome /root
 ln -sT var/srv /srv
-ln -sT ../../var/usrlocal /usr/local
+ln -sT ../var/usrlocal /usr/local
 
 # fedora-bootc/minimal/basic-fixes.yaml
 
