@@ -63,7 +63,7 @@
         {
             "type": "disk",
             "key": " ",
-            "hideFS": "overlay"
+            "hideFS": "overlay:erofs"
         },
         {
             "type": "display",
