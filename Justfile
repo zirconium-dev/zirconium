@@ -29,7 +29,7 @@ build-sysupdate:
     mkosi -B --debug-shell --profile=base,base-desktop,sysupdate,brew,base
 
 build-iso:
-    mkosi -B --debug --profile=iso
+    mkosi -B --debug-shell --profile=base,base-desktop,bootc-ostree,brew,zirconium-bootc-ostree,liveiso-bootc-ostree
 
 lint:
     podman run --rm -it --entrypoint=bootc {{ image }} container lint
