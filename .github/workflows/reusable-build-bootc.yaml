@@ -229,7 +229,7 @@ jobs:
           if [ "$MANUAL_RELEASE" != "" ] ; then
             echo "distributionversion=${MANUAL_RELEASE}" >> "${GITHUB_OUTPUT}"
           else
-            echo "distributionversion=$(grep "Release=" mkosi.conf | cut -d= -f2)" >> "${GITHUB_OUTPUT}"
+            echo "distributionversion=$(grep "Release=" mkosi.conf | cut -d= -f2 | head -n 1)" >> "${GITHUB_OUTPUT}"
           fi
 
       - name: Image Metadata
