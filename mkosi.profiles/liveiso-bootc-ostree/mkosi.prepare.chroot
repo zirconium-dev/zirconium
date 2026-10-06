@@ -1,8 +1,17 @@
 #!/usr/bin/env bash
 
-set -xeuo pipefail
+set -xeo pipefail
 
 mkdir -p "${SRCDIR}/cache"
+
+# Check for IMAGE_FULL env var
+if [[ -n "$IMAGE_FULL" ]]; then
+  echo "Downloading image $IMAGE_FULL via skopeo."
+else
+  IMAGE_FULL="ghcr.io/zirconium-dev/zirconium:latest"
+  echo "IMAGE_FULL not set. Downloading the default image $IMAGE_FULL via skopeo."
+fi
+
 pushd "${SRCDIR}/cache"
-skopeo copy docker://ghcr.io/zirconium-dev/zirconium:latest "oci://${SRCDIR}/cache/zirconium-oci"
+skopeo copy docker://$IMAGE_FULL "oci://${SRCDIR}/cache/zirconium-oci"
 popd
