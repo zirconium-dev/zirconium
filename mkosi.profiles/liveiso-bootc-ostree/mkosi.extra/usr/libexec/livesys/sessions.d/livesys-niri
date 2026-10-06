@@ -27,8 +27,5 @@ systemctl restart greetd
 # DMS_DEFAULTCONFIG_BASEDIR="/usr/share/miracle-wm/DankMaterialShell-default-config"
 # sed -i 's/"foot"/"liveinst"/' "${DMS_DEFAULTCONFIG_BASEDIR}/user-local-state/DankMaterialShell/session.json"
 
-# echoing type liveinst to start the installer
-echo "echo 'Please type liveinst and press Enter to start the installer'" >> /home/liveuser/.bashrc
-
 # Ensure the files and folders are owned by liveuser
 chown --recursive liveuser:liveuser /home/liveuser/
