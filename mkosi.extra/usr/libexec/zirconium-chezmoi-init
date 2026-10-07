@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+# First-time apply of the Zirconium dotfiles (zdots).
+#
+# Without a chezmoi state, `chezmoi apply` silently overwrites existing files,
+# e.g. a niri config kept in $HOME when rebasing from another Fedora install.
+# Back those files up first, as <file>.backup.
+
+set -euo pipefail
+
+SOURCE=/usr/share/zirconium/zdots
+CONFIG_DIR="${HOME}/.config/zirconium/chezmoi"
+CONFIG="${CONFIG_DIR}/chezmoi.toml"
+
+# Fail before creating CONFIG_DIR so the unit retries on the next login.
+STATUS="$(chezmoi status -S "${SOURCE}" --config "${CONFIG}" --include files,symlinks </dev/null)"
+
+while IFS= read -r line; do
+  # Second column "M": the file exists and would be overwritten.
+  [[ "${line:1:1}" == "M" ]] || continue
+  target="${HOME}/${line:3}"
+  backup="${target}.backup"
+  if [[ -e "${backup}" || -L "${backup}" ]]; then
+    backup="${target}.backup.$(date +%Y%m%d%H%M%S)"
+  fi
+  cp -a -- "${target}" "${backup}"
+  echo "Backed up ${target} to ${backup}"
+done <<< "${STATUS}"
+
+mkdir -p "${CONFIG_DIR}"
+touch "${CONFIG}"
+exec chezmoi apply -S "${SOURCE}" --config "${CONFIG}"

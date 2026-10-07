@@ -43,6 +43,8 @@ Yes! Put your Niri customizations in `~/.config/niri/local.kdl` (for your user) 
 
 We update our dotfiles in OS updates, which will overwrite the default `~/.config/niri/config.kdl` file. If you edit it, it might get overwritten in a future update. 
 
+If you rebase from another install, dotfiles you already had (like an existing niri config) are backed up next to the original as `<file>.backup` on your first login.
+
 ## Zirconium is a stupid name. Why did you pick Zirconium?
 A weird wax baby made me.
 
