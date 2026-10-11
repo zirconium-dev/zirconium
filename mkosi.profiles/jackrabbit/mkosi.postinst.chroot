@@ -30,3 +30,6 @@ echo 'import "/usr/share/zirconium/just/67-gamerslop.just"' >> /usr/share/zircon
 mkdir -p /usr/{lib/firmware/amd,share/alsa/ucm2/conf.d}
 cp -r "${SRCDIR}/cache/valve-audio/sof-nau8821-max" /usr/share/alsa/ucm2/conf.d/
 cp -r "${SRCDIR}/cache/valve-audio/sof_fw/." /usr/lib/firmware/amd/
+
+# proper steam controller support
+sed -i '12a LD_PRELOAD=/usr/lib/extest/libextest.so' /usr/bin/steam
