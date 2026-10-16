@@ -41,10 +41,10 @@ pack-iso-chroot $IMAGE_NAME=image_name:
     # We need root because of xorriso
     mkdir -p out work
     sudo podman run --rm -it --privileged \
-     -v "./lonicera:/lonicera:Z,rw" \
-     -v "$LATEST_IMAGE:/input:Z,rw" \
-     -v "./out:/out:Z,rw" \
-     -v "./work:/tmp/work:Z,rw" \
+     -v "$LATEST_IMAGE:/input:Z,ro" \
+     -v "$(realpath .)/out:/out:Z,rw" \
+     -v "$(realpath .)/lonicera:/lonicera:Z,ro" \
+     -v "$(realpath .)/work:/tmp/work:Z,rw" \
      -w /tmp/work \
      -e LONICERA_INCREMENTAL=1 \
      -e LONICERA_DISTRO_UGLYNAME="zirconium" \
