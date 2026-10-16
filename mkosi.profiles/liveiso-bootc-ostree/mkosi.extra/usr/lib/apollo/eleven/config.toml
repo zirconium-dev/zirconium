@@ -1,0 +1,12 @@
+[info]
+os_name = "Zirconium"
+experimental = "False"
+
+[disks]
+filesystem = "btrfs"
+efi_size = "2GB"
+
+[bootc]
+target_imgref = "ghcr.io/zirconium-dev/zirconium:latest"
+source_imgref = "oci:/usr/lib/zirconium/install/zirconium-oci"
+use_composefs = "False"
