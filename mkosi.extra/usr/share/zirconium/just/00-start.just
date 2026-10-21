@@ -30,7 +30,15 @@ _zdots-reset $FILE="":
 reset-all-configs:
     #!/usr/bin/env bash
     if gum confirm --default=no "Are you sure you want to reset all your configuration?" ; then
+        pkill -USR1 -x dms >/dev/null 2>&1 || :
         chezmoi apply --force -S "{{ zdots_path }}" --verbose --config "$HOME/.config/zirconium/chezmoi/chezmoi.toml"
+        rm -rf "$HOME/.config/dms" "$HOME/.cache/dms" "$HOME/.local/state/dms"
+        mv "$HOME/.config/DankMaterialShell" "$HOME/.config/dms"
+        mv "$HOME/.cache/DankMaterialShell" "$HOME/.cache/dms"
+        mv "$HOME/.local/state/DankMaterialShell" "$HOME/.local/state/dms"
+        ln -sf "$HOME/.config/dms" "$HOME/.config/DankMaterialShell"
+        ln -sf "$HOME/.cache/dms" "$HOME/.cache/DankMaterialShell"
+        ln -sf "$HOME/.local/state/dms" "$HOME/.local/state/DankMaterialShell"
     fi
 
 # Toggle display of the user-motd in terminal
