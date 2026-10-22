@@ -6,7 +6,7 @@
 
 ## What is Zirconium?
 
-Zirconium is an opinionated Fedora Bootc image that makes use of Niri and Dux Shell to create a usable out of the box TWM experience.
+Zirconium is an opinionated Fedora Bootc image that makes use of Niri and DMS to create a usable out of the box TWM experience.
 
 Zirconium is built primarily for container-focused development and day-to-day usage, however gaming is still more than possible. For a fully gaming-focused experience, use Bazzite.
 
@@ -67,7 +67,7 @@ sudo bootc switch ghcr.io/zirconium-dev/zirconium-jackrabbit-nvidia:latest
 
 Currently the Nvidia kernel module and OGC kernel used in Jackrabbit are not being signed so there is no way of using Secure Boot on the Nvidia and Jackrabbit images. ([related issue](https://github.com/zirconium-dev/zirconium/issues/108))
 
-## Can I still customize Niri and/or Dux Shell?
+## Can I still customize Niri and/or DMS?
 
 Yes! Put your Niri customizations in `~/.config/niri/local.kdl` (for your user) or `/etc/niri/local.kdl` (for system-wide customizations).
 
