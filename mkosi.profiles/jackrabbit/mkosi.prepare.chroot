@@ -4,22 +4,27 @@ set -xeuo pipefail
 
 mkdir -p "${SRCDIR}/cache"
 
-if [ ! -e "${SRCDIR}/cache/oras" ] ; then
-	ORAS_VERSION="$("${SRCDIR}/ghcurl" https://api.github.com/repos/oras-project/oras/releases/latest | jq -rc .tag_name)"
-	ORAS_URL="$("${SRCDIR}/ghcurl" https://api.github.com/repos/oras-project/oras/releases/latest | jq -rc --arg tag_name "${ORAS_VERSION#v}" --arg arch "$(arch | sed "s/aarch/arm/;s/x86_64/amd64/")" '.assets[] | select(.name=="oras_" + $tag_name + "_linux_" + $arch + ".tar.gz") | .browser_download_url')"
-	"${SRCDIR}/ghcurl" "${ORAS_URL}" -Lo /dev/stdout | tar -xvzf - -C "${SRCDIR}/cache" --owner=0 --group=0 --no-same-owner --no-same-permissions oras
-fi
+"${SRCDIR}/build-scripts/ensure-oras"
+"${SRCDIR}/build-scripts/ensure-cosign"
 
 if [ ! -e "${SRCDIR}/cache/linux-ogc" ] ; then
+	# Currently there isn't known good method of verifying OGC kernel OCI image other than this command
+	# https://github.com/OpenGamingCollective/kernel-packages/blob/170127c4226d4cc7747b4a4e07167cdb6ea7166b/.github/workflows/fedora.yaml#L424-L427
+	"${SRCDIR}/cache/cosign" verify --certificate-identity-regexp=".*" --certificate-oidc-issuer="https://token.actions.githubusercontent.com" ghcr.io/opengamingcollective/kernel-packages-fedora:latest-fc$(rpm -E %fedora) | jq
+
 	"${SRCDIR}/cache/oras" pull ghcr.io/opengamingcollective/kernel-packages-fedora:latest-fc$(rpm -E %fedora)
 	mkdir -p "${SRCDIR}/cache/linux-ogc"
 	mv *.rpm "${SRCDIR}/cache/linux-ogc/"
 fi
 
 if [ ! -e "${SRCDIR}/cache/valve-audio" ] ; then
-	curl --retry 3 --retry-delay 2 --retry-max-time 60 -fsSLo /dev/stdout https://steamdeck-packages.steamos.cloud/archlinux-mirror/jupiter-main/os/x86_64/steamdeck-dsp-1.00-1-any.pkg.tar.zst | tar --zstd -xvf - -C "${SRCDIR}/cache" --owner=0 --group=0 --no-same-owner --no-same-permissions usr/lib/firmware/amd usr/share/alsa/ucm2/conf.d
+	curl --retry 3 --retry-delay 2 --retry-max-time 60 -fsSLo "${SRCDIR}/cache/valve-audio.tar.zst" https://steamdeck-packages.steamos.cloud/archlinux-mirror/jupiter-main/os/x86_64/steamdeck-dsp-1.03-1-any.pkg.tar.zst
+	
+	echo "1dc7c303a5503931b97bbeec44d5664d34f8cfe62050faa6992da5b005d72ae2  ${SRCDIR}/cache/valve-audio.tar.zst" | sha256sum -c -
+
+	tar --zstd -xvf "${SRCDIR}/cache/valve-audio.tar.zst" -C "${SRCDIR}/cache" --owner=0 --group=0 --no-same-owner --no-same-permissions usr/lib/firmware/amd usr/share/alsa/ucm2/conf.d
 	mkdir -p "${SRCDIR}/cache/valve-audio"
 	mv "${SRCDIR}/cache/usr/lib/firmware/amd" "${SRCDIR}/cache/valve-audio/sof_fw"
 	mv "${SRCDIR}/cache/usr/share/alsa/ucm2/conf.d/sof-nau8821-max" "${SRCDIR}/cache/valve-audio"
-	rm -rf "${SRCDIR}/cache/usr"
+	rm -rf "${SRCDIR}/cache/usr" "${SRCDIR}/cache/valve-audio.tar.zst"
 fi

@@ -4,12 +4,15 @@ set -xeuo pipefail
 
 mkdir -p "${SRCDIR}/cache"
 
-if [ ! -e "${SRCDIR}/cache/crane" ] ; then
-	CRANE_URL="$("${SRCDIR}/ghcurl" https://api.github.com/repos/google/go-containerregistry/releases/latest | jq -rc --arg arch "$(arch | sed "s/aarch/arm/")" '.assets[] | select(.name=="go-containerregistry_Linux_" + $arch + ".tar.gz") | .browser_download_url')"
-	"${SRCDIR}/ghcurl" "${CRANE_URL}" -Lo /dev/stdout | tar -xvzf - -C "${SRCDIR}/cache" --owner=0 --group=0 --no-same-owner --no-same-permissions crane
-fi
+"${SRCDIR}/build-scripts/ensure-crane"
+"${SRCDIR}/build-scripts/ensure-cosign"
 
 if [ ! -e "${SRCDIR}/cache/ublue-brew" ] ; then
+	"${SRCDIR}/build-scripts/ghcurl" "https://github.com/ublue-os/brew/raw/refs/heads/main/cosign.pub" -Lo "${SRCDIR}/cache/ublue-brew.pub"
+	echo "af78ecfda6eb21c35195af3739341715e9cfc3f2f5911dd9c10b0670547bf6e8  ${SRCDIR}/cache/ublue-brew.pub" | sha256sum -c -
+	"${SRCDIR}/cache/cosign" verify --key "${SRCDIR}/cache/ublue-brew.pub" "ghcr.io/ublue-os/brew:latest" | jq
+	rm "${SRCDIR}/cache/ublue-brew.pub"
+
 	"${SRCDIR}/cache/crane" export ghcr.io/ublue-os/brew:latest | tar -xvf - -C "${SRCDIR}/cache" system_files
 	mv "${SRCDIR}/cache/system_files" "${SRCDIR}/cache/ublue-brew"
 fi
