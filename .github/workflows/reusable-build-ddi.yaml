@@ -130,8 +130,7 @@ jobs:
           pushd mkosi.output/
           trap 'popd' EXIT
 
-          TARGET_IMAGE_NAME="$(cut -f1 -d- <<< "${IMAGE_NAME}")"
-
+          DDI_NAME="$(cut -f1 -d- <<< "${IMAGE_NAME}")"
           SYSTEMD_ARCH="$(uname -m | tr '_' '-')"
           for COMPONENT in "." verity verity-sig ; do
             if [ "${COMPONENT}" == "." ] ; then
@@ -140,9 +139,9 @@ jobs:
             if [ "${COMPONENT}" != "" ] ; then
               COMPONENT="-${COMPONENT}"
             fi
-            oras push --artifact-platform "linux/${PLATFORM}" "${IMAGE_REGISTRY}/${TARGET_IMAGE_NAME}/usr${COMPONENT}:${DEFAULT_TAG}-${PLATFORM}" $(find . -iname "${IMAGE_NAME^}_*_${SYSTEMD_ARCH}.usr-${SYSTEMD_ARCH}${COMPONENT}*") --format json | jq -rc .digest | tee "${OUTPUT_DIRECTORY}/${IMAGE_NAME}_usr${COMPONENT}_${PLATFORM}.txt"
+            oras push --artifact-platform "linux/${PLATFORM}" "${IMAGE_REGISTRY}/${IMAGE_NAME}/usr${COMPONENT}:${DEFAULT_TAG}-${PLATFORM}" $(find . -iname "${DDI_NAME^}_*_${SYSTEMD_ARCH}.usr-${SYSTEMD_ARCH}${COMPONENT}*") --format json | jq -rc .digest | tee "${OUTPUT_DIRECTORY}/${IMAGE_NAME}_usr${COMPONENT}_${PLATFORM}.txt"
           done
-          oras push --artifact-platform "linux/${PLATFORM}" "${IMAGE_REGISTRY}/${TARGET_IMAGE_NAME}/uki:${DEFAULT_TAG}-${PLATFORM}" "${IMAGE_NAME^}_"*".efi" --format json | jq -rc .digest | tee "${OUTPUT_DIRECTORY}/${IMAGE_NAME}_uki_${PLATFORM}.txt"
+          oras push --artifact-platform "linux/${PLATFORM}" "${IMAGE_REGISTRY}/${IMAGE_NAME}/uki:${DEFAULT_TAG}-${PLATFORM}" "${DDI_NAME^}_"*".efi" --format json | jq -rc .digest | tee "${OUTPUT_DIRECTORY}/${IMAGE_NAME}_uki_${PLATFORM}.txt"
 
       - name: Upload Output Artifacts
         if: inputs.publish
@@ -266,8 +265,6 @@ jobs:
         run: |
           set -xeo pipefail
 
-          TARGET_IMAGE_NAME="$(cut -f1 -d- <<< "${IMAGE_NAME}")"
-
           for COMPONENT in $(find /tmp/artifacts/* -type f | cut -f2 -d_ | uniq) ; do
-            oras manifest index create "${IMAGE_REGISTRY}/${TARGET_IMAGE_NAME}/${COMPONENT}:${DEFAULT_TAG}" $(find "/tmp/artifacts/${IMAGE_NAME}_${COMPONENT}_"* | cut -d_ -f3 | cut -d. -f1 | uniq | xargs -I{} echo "${DEFAULT_TAG}-{}")
+            oras manifest index create "${IMAGE_REGISTRY}/${IMAGE_NAME}/${COMPONENT}:${DEFAULT_TAG}" $(find "/tmp/artifacts/${IMAGE_NAME}_${COMPONENT}_"* | cut -d_ -f3 | cut -d. -f1 | uniq | xargs -I{} echo "${DEFAULT_TAG}-{}")
           done
