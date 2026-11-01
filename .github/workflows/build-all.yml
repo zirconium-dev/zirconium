@@ -1,0 +1,182 @@
+name: Build Zirconium
+
+permissions:
+  contents: read
+  actions: read
+  packages: write
+  id-token: write
+
+on:
+  push:
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: "0 1 * * TUE"
+  merge_group:
+  workflow_dispatch:
+    inputs:
+      skip-ddi:
+        description: Skip building DDI
+        default: false
+        type: boolean
+      skip-base:
+        description: Skip building base images
+        default: false
+        type: boolean
+      skip-rawhide:
+        description: Skip building rawhide images
+        default: false
+        type: boolean
+      skip-nvidia:
+        description: Skip building Nvidia images
+        default: false
+        type: boolean
+      skip-jackrabbit:
+        description: Skip building Jackrabbit images
+        default: false
+        type: boolean
+      skip-jackrabbit-nvidia:
+        description: Skip building Jackrabbit Nvidia images
+        default: false
+        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  build-base-bootc:
+    name: Build base Bootc
+    if: |
+      github.event.inputs.skip-base == 'false' || !github.event.inputs.skip-base
+    uses: ./.github/workflows/reusable-build-bootc.yaml
+    secrets: inherit
+    with:
+      image-name: zirconium
+      platforms: amd64,arm64
+      publish: ${{ github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+
+  build-base-ddi:
+    name: Build base DDI
+    if: |
+      !failure() && !cancelled() &&
+      (github.event.inputs.skip-ddi == 'false' || !github.event.inputs.skip-ddi) &&
+      (github.event.inputs.skip-base == 'false' || !github.event.inputs.skip-base)
+    needs: build-base-bootc
+    uses: ./.github/workflows/reusable-build-ddi.yaml
+    secrets: inherit
+    with:
+      image-name: zirconium
+      platforms: amd64,arm64
+      publish: ${{ github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+
+  build-rawhide-bootc:
+    name: Build rawhide Bootc
+    if: |
+      github.event.inputs.skip-rawhide == 'false' || !github.event.inputs.skip-rawhide
+    uses: ./.github/workflows/reusable-build-bootc.yaml
+    secrets: inherit
+    with:
+      image-name: zirconium
+      platforms: amd64,arm64
+      default-tag: rawhide
+      release: rawhide
+      publish: ${{ github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+
+  build-rawhide-ddi:
+    name: Build rawhide DDI
+    if: |
+      !failure() && !cancelled() &&
+      (github.event.inputs.skip-ddi == 'false' || !github.event.inputs.skip-ddi) &&
+      (github.event.inputs.skip-rawhide == 'false' || !github.event.inputs.skip-rawhide)
+    needs: build-rawhide-bootc
+    uses: ./.github/workflows/reusable-build-ddi.yaml
+    secrets: inherit
+    with:
+      image-name: zirconium
+      platforms: amd64,arm64
+      default-tag: rawhide
+      release: rawhide
+      publish: ${{ github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+
+  build-nvidia-bootc:
+    name: Build Nvidia Bootc
+    if: |
+      github.event.inputs.skip-nvidia == 'false' || !github.event.inputs.skip-nvidia
+    uses: ./.github/workflows/reusable-build-bootc.yaml
+    secrets: inherit
+    with:
+      image-name: zirconium-nvidia
+      platforms: amd64,arm64
+      profiles: nvidia
+      publish: ${{ github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+
+  build-nvidia-ddi:
+    name: Build Nvidia DDI
+    if: |
+      !failure() && !cancelled() &&
+      (github.event.inputs.skip-ddi == 'false' || !github.event.inputs.skip-ddi) &&
+      (github.event.inputs.skip-nvidia == 'false' || !github.event.inputs.skip-nvidia)
+    needs: build-nvidia-bootc
+    uses: ./.github/workflows/reusable-build-ddi.yaml
+    secrets: inherit
+    with:
+      image-name: zirconium-nvidia
+      platforms: amd64,arm64
+      profiles: nvidia
+      publish: ${{ github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+
+  build-jackrabbit-bootc:
+    name: Build Jackrabbit Bootc
+    if: |
+      github.event.inputs.skip-jackrabbit == 'false' || !github.event.inputs.skip-jackrabbit
+    uses: ./.github/workflows/reusable-build-bootc.yaml
+    secrets: inherit
+    with:
+      image-name: zirconium-jackrabbit
+      platforms: amd64
+      profiles: jackrabbit
+      publish: ${{ github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+
+  build-jackrabbit-ddi:
+    name: Build Jackrabbit DDI
+    if: |
+      !failure() && !cancelled() &&
+      (github.event.inputs.skip-ddi == 'false' || !github.event.inputs.skip-ddi) &&
+      (github.event.inputs.skip-jackrabbit == 'false' || !github.event.inputs.skip-jackrabbit)
+    needs: build-jackrabbit-bootc
+    uses: ./.github/workflows/reusable-build-ddi.yaml
+    secrets: inherit
+    with:
+      image-name: zirconium-jackrabbit
+      platforms: amd64
+      profiles: jackrabbit
+      publish: ${{ github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+
+  build-jackrabbit-nvidia-bootc:
+    name: Build Jackrabbit Nvidia Bootc
+    if: |
+      github.event.inputs.skip-jackrabbit-nvidia == 'false' || !github.event.inputs.skip-jackrabbit-nvidia
+    uses: ./.github/workflows/reusable-build-bootc.yaml
+    secrets: inherit
+    with:
+      image-name: zirconium-jackrabbit-nvidia
+      platforms: amd64
+      profiles: jackrabbit,nvidia
+      publish: ${{ github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+
+  build-jackrabbit-nvidia-ddi:
+    name: Build Jackrabbit Nvidia DDI
+    if: |
+      !failure() && !cancelled() &&
+      (github.event.inputs.skip-ddi == 'false' || !github.event.inputs.skip-ddi) &&
+      (github.event.inputs.skip-jackrabbit-nvidia == 'false' || !github.event.inputs.skip-jackrabbit-nvidia)
+    needs: build-jackrabbit-nvidia-bootc
+    uses: ./.github/workflows/reusable-build-ddi.yaml
+    secrets: inherit
+    with:
+      image-name: zirconium-jackrabbit-nvidia
+      platforms: amd64
+      profiles: jackrabbit,nvidia
+      publish: ${{ github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
