@@ -178,7 +178,7 @@ jobs:
         if: inputs.publish
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
-          name: ${{ env.IMAGE_NAME }}-${{ matrix.platform }}
+          name: ${{ env.IMAGE_NAME }}-${{ env.DEFAULT_TAG }}-bootc-${{ matrix.platform }}
           retention-days: 1
           if-no-files-found: error
           path: |
@@ -279,7 +279,7 @@ jobs:
         if: inputs.publish
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
-          pattern: ${{ env.IMAGE_NAME }}-*
+          pattern: ${{ env.IMAGE_NAME }}-${{ env.DEFAULT_TAG }}-bootc-*
           merge-multiple: true
           path: /tmp/artifacts
 
