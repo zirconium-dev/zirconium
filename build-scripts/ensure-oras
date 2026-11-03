@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+set -xeuo pipefail
+
+mkdir -p "${SRCDIR}/cache"
+
+if [ ! -e "${SRCDIR}/cache/oras" ] ; then
+	ARCH="$(arch | sed "s/aarch/arm/;s/x86_/amd/")"
+	ORAS_URL="https://api.github.com/repos/oras-project/oras/releases/latest"
+	ORAS_VERSION="$("${SRCDIR}/build-scripts/ghcurl" "${ORAS_URL}" | jq -rc .tag_name)"
+	ORAS_TAR_URL="$("${SRCDIR}/build-scripts/ghcurl" "${ORAS_URL}" | jq -rc --arg tag_name "${ORAS_VERSION#v}" --arg arch "${ARCH}" '.assets[] | select(.name=="oras_" + $tag_name + "_linux_" + $arch + ".tar.gz") | .browser_download_url')"
+	ORAS_SUM_URL="$("${SRCDIR}/build-scripts/ghcurl" "${ORAS_URL}" | jq -rc --arg tag_name "${ORAS_VERSION#v}" '.assets[] | select(.name=="oras_" + $tag_name + "_checksums.txt") | .browser_download_url')"
+
+	"${SRCDIR}/build-scripts/ghcurl" "${ORAS_TAR_URL}" -Lo "${SRCDIR}/cache/oras_${ORAS_VERSION#v}_linux_${ARCH}.tar.gz"
+	"${SRCDIR}/build-scripts/ghcurl" "${ORAS_SUM_URL}" -Lo "${SRCDIR}/cache/oras.sums"
+
+	pushd "${SRCDIR}/cache"
+		sha256sum -c "oras.sums" --ignore-missing --strict
+		rm "oras.sums"
+		mv oras* "oras.tar.gz"
+	popd
+
+	tar -xvzf "${SRCDIR}/cache/oras.tar.gz" -C "${SRCDIR}/cache" --owner=0 --group=0 --no-same-owner --no-same-permissions oras
+	rm "${SRCDIR}/cache/oras.tar.gz"
+fi

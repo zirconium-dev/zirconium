@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+set -xeuo pipefail
+
+mkdir -p "${SRCDIR}/cache"
+
+if [ ! -e "${SRCDIR}/cache/crane" ] ; then
+	ARCH="$(arch | sed "s/aarch/arm/")"
+	CRANE_URL="https://api.github.com/repos/google/go-containerregistry/releases/latest"
+	CRANE_TAR_URL="$("${SRCDIR}/build-scripts/ghcurl" "${CRANE_URL}" | jq -rc --arg arch "${ARCH}" '.assets[] | select(.name=="go-containerregistry_Linux_" + $arch + ".tar.gz") | .browser_download_url')"
+	CRANE_SUM_URL="$("${SRCDIR}/build-scripts/ghcurl" "${CRANE_URL}" | jq -rc '.assets[] | select(.name=="checksums.txt") | .browser_download_url')"
+
+	"${SRCDIR}/build-scripts/ghcurl" "${CRANE_TAR_URL}" -Lo "${SRCDIR}/cache/go-containerregistry_Linux_${ARCH}.tar.gz"
+	"${SRCDIR}/build-scripts/ghcurl" "${CRANE_SUM_URL}" -Lo "${SRCDIR}/cache/crane.sums"
+
+	pushd "${SRCDIR}/cache"
+		sha256sum -c "crane.sums" --ignore-missing --strict
+		rm "crane.sums"
+		mv go-containerregistry* "crane.tar.gz"
+	popd
+	
+	tar -xvzf "${SRCDIR}/cache/crane.tar.gz" -C "${SRCDIR}/cache" --owner=0 --group=0 --no-same-owner --no-same-permissions crane
+	rm "${SRCDIR}/cache/crane.tar.gz"
+fi

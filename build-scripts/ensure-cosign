@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+set -xeuo pipefail
+
+mkdir -p "${SRCDIR}/cache"
+
+if [ ! -e "${SRCDIR}/cache/cosign" ] ; then
+	ARCH="$(arch | sed "s/aarch/arm/;s/x86_/amd/")"
+	COSIGN_URL="https://api.github.com/repos/sigstore/cosign/releases/latest"
+	COSIGN_BIN_URL="$("${SRCDIR}/build-scripts/ghcurl" "${COSIGN_URL}" | jq -rc --arg arch "${ARCH}" '.assets[] | select(.name=="cosign-linux-" + $arch) | .browser_download_url')"
+	COSIGN_SUM_URL="$("${SRCDIR}/build-scripts/ghcurl" "${COSIGN_URL}" | jq -rc '.assets[] | select(.name=="cosign_checksums.txt") | .browser_download_url')"
+
+	"${SRCDIR}/build-scripts/ghcurl" "${COSIGN_BIN_URL}" -Lo "${SRCDIR}/cache/cosign-linux-${ARCH}"
+	"${SRCDIR}/build-scripts/ghcurl" "${COSIGN_SUM_URL}" -Lo "${SRCDIR}/cache/cosign.sums"
+
+	pushd "${SRCDIR}/cache"
+		sha256sum -c "cosign.sums" --ignore-missing --strict
+		rm "cosign.sums"
+		mv cosign* "cosign"
+	popd
+
+	chmod +x "${SRCDIR}/cache/cosign"
+fi
