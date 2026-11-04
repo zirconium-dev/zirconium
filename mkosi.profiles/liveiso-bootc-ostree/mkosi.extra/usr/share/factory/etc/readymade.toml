@@ -2,6 +2,7 @@
 allowed_installtypes = ["wholedisk"]
 copy_mode = "bootc"
 bootc_imgref = "oci:/usr/lib/zirconium/install/zirconium-oci"
+bootc_target_imgref = "ghcr.io/zirconium-dev/zirconium:latest"
 bootc_enforce_sigpolicy = true
 # bootc_args = ["--skip-fetch-check"]
 
