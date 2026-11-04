@@ -1,0 +1,19 @@
+[copr:copr.fedorainfracloud.org:duxlabs:dms]
+name=Copr repo for dms owned by duxlabs
+baseurl=https://download.copr.fedorainfracloud.org/results/duxlabs/dms/fedora-$releasever-$basearch/
+type=rpm-md
+gpgcheck=1
+gpgkey=https://download.copr.fedorainfracloud.org/results/duxlabs/dms/pubkey.gpg
+repo_gpgcheck=0
+enabled=0
+enabled_metadata=1
+
+[coprdep:copr.fedorainfracloud.org:duxlabs:dux-repo]
+name=Copr copr.fedorainfracloud.org/duxlabs/dms runtime dependency #1 - duxlabs/dux-repo
+baseurl=https://download.copr.fedorainfracloud.org/results/duxlabs/dux-repo/fedora-$releasever-$basearch/
+type=rpm-md
+gpgcheck=1
+gpgkey=https://download.copr.fedorainfracloud.org/results/duxlabs/dux-repo/pubkey.gpg
+repo_gpgcheck=0
+enabled=0
+enabled_metadata=1

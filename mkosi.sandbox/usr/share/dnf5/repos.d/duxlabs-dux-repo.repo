@@ -1,0 +1,10 @@
+[copr:copr.fedorainfracloud.org:duxlabs:dux-repo]
+name=Copr repo for dux-repo owned by duxlabs
+baseurl=https://download.copr.fedorainfracloud.org/results/duxlabs/dux-repo/fedora-$releasever-$basearch/
+type=rpm-md
+gpgcheck=1
+gpgkey=https://download.copr.fedorainfracloud.org/results/duxlabs/dux-repo/pubkey.gpg
+repo_gpgcheck=0
+enabled=0
+enabled_metadata=1
+priority=1
