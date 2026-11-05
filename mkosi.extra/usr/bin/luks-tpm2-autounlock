@@ -40,6 +40,7 @@ case "${EXIT_CODE}" in
     exit 0
 esac
 
-if sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=7+14 ${SET_PIN_ARG} "${CRYPT_DISK}" ; then
+if sudo systemd-cryptenroll --wipe-slot=tpm2 "${CRYPT_DISK}" && \
+   sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7+14 ${SET_PIN_ARG} "${CRYPT_DISK}" ; then
   echo "TPM2 LUKS auto-unlock configured for next reboot."
 fi
