@@ -92,7 +92,7 @@ jobs:
           submodules: true
 
       - name: Install mkosi
-        uses: systemd/mkosi@c5b4d9ebfc7d61f9a9ea6cd7b6c3fad18ea4b570 # main
+        uses: systemd/mkosi@a6753e508681aa162cef4e5183f1a728c11c4d78 # main
 
       - name: Install just
         uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3
