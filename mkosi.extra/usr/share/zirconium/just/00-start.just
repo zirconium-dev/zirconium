@@ -9,7 +9,7 @@ update:
     if [[ -e "/sysroot/ostree" || -e "/sysroot/composefs" ]] ; then
         pkexec bootc upgrade
     else
-        pompona-update
+        updatectl update
     fi
 
 update-dotfiles:
