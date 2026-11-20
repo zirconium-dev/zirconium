@@ -7,5 +7,10 @@ find "${SRCDIR}/cache/ublue-brew" -type f -exec setfattr -h -n user.update-inter
 
 cp -a "${SRCDIR}/cache/ublue-brew/." /
 
+# Add linuxbrew to the list of paths usable by `sudo`
+# not a sudoers.d override because we want to get updates from upstream and not break everything
+sed -Ei "s/secure_path = (.*)/secure_path = \1:\/home\/linuxbrew\/.linuxbrew\/bin/" /etc/sudoers
+
 stat /usr/lib/systemd/system/brew-setup.service
 stat /usr/share/homebrew.tar.zst
+grep -F -e "linuxbrew" /etc/sudoers
