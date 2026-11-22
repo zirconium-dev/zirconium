@@ -2,10 +2,11 @@ disable sshd.service
 disable sshd.socket
 disable systemd-timesyncd.service
 enable auditd.service
+enable cardwired.service
 enable firewalld.service
 enable flatpak-add-flathub-repos.service
 enable flatpak-preinstall.service
 enable greetd.service
+enable input-remapper.service
 enable ntpd-rs.service
 enable systemd-resolved.service
-enable cardwired.service
