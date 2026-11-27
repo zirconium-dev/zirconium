@@ -50,7 +50,7 @@ pack-iso-chroot $IMAGE_NAME=image_name:
      -e LONICERA_DISTRO_UGLYNAME="zirconium" \
      -e "LONICERA_OUTPUT_NAME=$IMAGE_NAME" \
      fedora:latest \
-     sh -c 'dnf install -y erofs-utils dosfstools mtools xorriso && /lonicera/lonicera /input /out'
+     sh -c 'dnf install -y erofs-utils dosfstools squashfs-tools mtools xorriso && /lonicera/lonicera /input /out'
 
 lint:
     podman run --rm -it --entrypoint=bootc {{ image }} container lint
