@@ -1,0 +1,22 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
+
+@import "anaconda-branding.css";
+@import "anaconda-branding-compat.css";
+
+#badge {
+    inline-size: 225px;
+    block-size: 80px;
+    background-image: url("logo.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+
+.anaconda {
+    /* Brand palette */
+    --brand-default-light: #6c4794;
+    --brand-default: #4172be;
+    --brand-default-dark: #6c4794;
+    .logo {
+        background-image: url("logo.png");
+    }
+}
