@@ -2,4 +2,4 @@
 
 cat /usr/share/zirconium/glorp.txt
 echo -e "\nYou are testing alpha-grade software right now. Beware!"
-echo "Run eleven to run the installer."
+echo "Run liveinst to run the installer."

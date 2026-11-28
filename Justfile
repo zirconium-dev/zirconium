@@ -29,6 +29,7 @@ build-sysupdate:
     mkosi -B --debug-shell --profile=base,base-desktop,sysupdate,brew,base
 
 build-iso: build-iso-chroot pack-iso-chroot
+iterate-iso: build-iso
 
 build-iso-chroot:
     #!/usr/bin/env bash
@@ -40,11 +41,12 @@ pack-iso-chroot $IMAGE_NAME=image_name:
     LATEST_IMAGE="$(realpath "$(find mkosi.output -type d -iname "${IMAGE_NAME^}_*_$(uname -m | tr '_' '-')" | tail -n-1)")"
     # We need root because of xorriso
     mkdir -p out work
+    TARGET_WORKING_DIR="$(realpath .)"
     sudo podman run --rm -it --privileged \
      -v "$LATEST_IMAGE:/input:Z,ro" \
-     -v "$(realpath .)/out:/out:Z,rw" \
-     -v "$(realpath .)/lonicera:/lonicera:Z,ro" \
-     -v "$(realpath .)/work:/tmp/work:Z,rw" \
+     -v "${TARGET_WORKING_DIR}/out:/out:Z,rw" \
+     -v "${TARGET_WORKING_DIR}/lonicera:/lonicera:Z,ro" \
+     -v "${TARGET_WORKING_DIR}/work:/tmp/work:Z,rw" \
      -w /tmp/work \
      -e LONICERA_INCREMENTAL=1 \
      -e LONICERA_DISTRO_UGLYNAME="zirconium" \

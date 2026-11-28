@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-
-set -xeuo pipefail
-
-cd "$OUTPUTDIR/$OUTPUT"
-find usr etc opt -exec touch -h -a -m -d '1970-01-01T00:00:00Z' {} +
-

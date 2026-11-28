@@ -16,3 +16,6 @@ mkosi.crt
 mkosi.version
 mkosi.rootpw
 .mkosi-private
+*.iso
+out
+work
